@@ -6,8 +6,8 @@
 using namespace SEUTraffic;
 
 size_t threads = std::min(std::thread::hardware_concurrency(), 4u);
-//std::string configFile = "../cityflow_config/syn_4x4/config.json";
-std::string configFile = "../examples/config.json";
+std::string configFile = ".cityflow_config/syn_4x4/config.json";
+//std::string configFile = "examples/config.json";
 
 
 // TEST(Basic, Basic){

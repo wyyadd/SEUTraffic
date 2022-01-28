@@ -15,8 +15,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-include_directories(extern/milo)
-
 set(REQUIRED_SUBMODULES
         "extern/pybind11/CMakeLists.txt"
         "extern/rapidjson/include"
@@ -54,9 +52,9 @@ endforeach()
 
 add_subdirectory(extern/pybind11)
 include_directories(extern/rapidjson/include)
+include_directories(extern/milo)
 
 add_subdirectory(src)
-
 # Tests
 find_package(GTest)
 if(GTEST_FOUND)
