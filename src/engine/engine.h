@@ -93,7 +93,7 @@ namespace SEUTraffic{
 
         bool checkPriority(int priority);
 
-        void pushVehicle(Vehicle* vehicle);
+        void pushVehicle(Vehicle *const vehicle, bool pushToDrivable = true);
 
         void threadGetAction(std::set<Vehicle*>& vehicles);
 

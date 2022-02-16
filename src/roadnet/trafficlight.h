@@ -1,5 +1,5 @@
-#ifndef CITYFLOW_TRAFFICLIGHT_H
-#define CITYFLOW_TRAFFICLIGHT_H
+#ifndef SEUTRAFFIC_TRAFFICLIGHT_H
+#define SEUTRAFFIC_TRAFFICLIGHT_H
 #include <vector>
 
 namespace SEUTraffic{

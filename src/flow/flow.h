@@ -1,52 +1,54 @@
-#ifndef CITYFLOW_FLOW_H
-#define CITYFLOW_FLOW_H
+#ifndef SEUTRAFFIC_FLOW_H
+#define SEUTRAFFIC_FLOW_H
+
+#include <iostream>
 
 #include "vehicle/vehicle.h"
-#include <cerrno>
-#include <type_traits>
-
-#include <string>
-#include <list>
-#include <memory>
+#include "vehicle/router.h"
 
 namespace SEUTraffic {
     class Engine;
 
-    class Flow {
+    struct VehicleInfo;
 
+    class Flow {
     private:
         VehicleInfo vehicleTemplate;
         std::shared_ptr<const Router> route;
         double interval;
-        double nowTime = 0;
-        double currentTime = 0;
-        int startTime = -1;
-        int endTime = -1;
+        double nowTime = 0;//yzh：距离产生上一个车辆流的时间
+        double currentTime = 0;//yzh:当前时间
+        int startTime = 0;//yzh:开始时间
+        int endTime = -1;//yzh:结束时间
         int cnt = 0;
-        bool isActive;
-        Engine *engine; //入口指针
+        Engine *engine;
         std::string id;
+        bool valid = true;
 
     public:
         Flow(const VehicleInfo &vehicleTemplate, double timeInterval,
-        Engine *engine, int startTime, int endTime, const std::string &id)
-        : vehicleTemplate(vehicleTemplate), interval(timeInterval),
-        startTime(startTime), endTime(endTime), engine(engine), id(id) {
-            assert(timeInterval >=1 || (startTime == endTime));
-            nowTime = 0; // 初始化
-            isActive = false;
+            Engine *engine, int startTime, int endTime, const std::string &id) 
+            : vehicleTemplate(vehicleTemplate), interval(timeInterval),
+              startTime(startTime), endTime(endTime), engine(engine), id(id) {
+            assert(timeInterval >= 1 || (startTime == endTime));
+            nowTime = interval;
         }
 
         void nextStep(double timeInterval);
 
-        std::string getId() const { return this->id; }
+        std::string getId() const;
+
+        bool isValid() const { return this->valid; }
+
+        void setValid(const bool valid) {
+            if (this->valid && !valid)
+                std::cerr << "[warning] Invalid route '" << id << "'. Omitted by default." << std::endl;
+            this->valid = valid;
+        }
 
         void reset();
 
-        double getStartTime() const { return this->startTime;}
-
-        bool IsActive() { return this->isActive; }
     };
 }
 
-#endif
+#endif //SEUTRAFFIC_FLOW_H

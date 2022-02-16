@@ -1,5 +1,10 @@
 #include "vehicle/vehicle.h"
 #include "roadnet/roadnet.h"
+#include "engine/engine.h"
+
+#include <iostream>
+#include <limits>
+#include <random>
 
 namespace SEUTraffic
 {
@@ -10,6 +15,23 @@ namespace SEUTraffic
         controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
     };
+
+    Vehicle::Vehicle(const VehicleInfo &vehicleInfo, const std::string &id, Engine *engine, Flow *flow)
+        : vehicleInfo(vehicleInfo),id(id), engine(engine),flow(flow){
+        controllerInfo.dis = 0;
+        controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
+        controllerInfo.running = true;
+
+        while (engine->checkPriority(priority = engine->rnd()));
+        enterTime = engine->getCurrentTime();
+    }
+
+    Vehicle::Vehicle(const Vehicle &vehicle, const std::string &id, Engine *engine, Flow *flow)
+        : vehicleInfo(vehicle.vehicleInfo), controllerInfo(vehicle.controllerInfo),
+         buffer(vehicle.buffer), id(id), engine(engine),flow(flow){
+        while (engine->checkPriority(priority = engine->rnd()));
+        enterTime = vehicle.enterTime;
+    }
 
     Drivable* Vehicle::getCurDrivable() const
     {
@@ -90,7 +112,7 @@ namespace SEUTraffic
         info["speed"] = std::to_string(getSpeed());
         const auto& drivable = getCurDrivable();
         info["drivable"] = drivable->getId();
-        const auto& road = drivable->isLane() ? drivable->getBelongRoad() : nullptr;
+        const auto &road = drivable->isLane() ? getCurLane()->getBelongRoad() : nullptr;
         if (road) {
             info["road"] = road->getId();
             info["intersection"] = road->getEndIntersection()->getId();
@@ -103,9 +125,11 @@ namespace SEUTraffic
         info["route"] = route;
 
         // is available
-        Road* nextRoad = getNextDrivable()->getBelongRoad();
-        RoadLink rlink = road->getEndIntersection()->getRoadLink(road, nextRoad);
-        info["passable"] = rlink.isAvailable() == true ? "1" : "0" ;
+
+        //yzh modify: nextDrivable不一定是lane，所以不一定属于road，逻辑需要修改
+        //Road* nextRoad = getNextDrivable()->getBelongRoad();
+        //RoadLink rlink = road->getEndIntersection()->getRoadLink(road, nextRoad);
+        //info["passable"] = rlink.isAvailable() == true ? "1" : "0" ;
 
         return info;
     }

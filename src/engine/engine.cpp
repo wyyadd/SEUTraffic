@@ -2,7 +2,7 @@
 #include <ctime>
 #include <iostream>
 #include <iterator>
-#include <math.h>
+#include <cmath>
 #include <mutex>
 #include <ostream>
 #include <string>
@@ -468,24 +468,35 @@ namespace SEUTraffic
         return vehiclePool.find(priority) != vehiclePool.end();
     }
 
-    void Engine::pushVehicle(Vehicle *vehicle)
-    {
+    //yzh:将vehicle放入vehiclePool、vehicleMap、threadVehiclePool
+    void Engine::pushVehicle(Vehicle *const vehicle, bool pushToDrivable) {
         size_t threadIndex = rnd() % threadNum;
-        vehiclePool.emplace(vehicle->getPriority(), std::make_pair(vehicle, threadIndex)); // 加入车流
-        if (vehicleMap.count(vehicle->getId())) {
-            std::cerr<<"repeat insert existed vehicle"<<std::endl;
-            throw "repeat insert existed vehicle";
-        }
-
+        vehiclePool.emplace(vehicle->getPriority(), std::make_pair(vehicle, threadIndex));
         vehicleMap.emplace(vehicle->getId(), vehicle);
         threadVehiclePool[threadIndex].insert(vehicle);
-        Vehicle *leader = vehicle->getCurDrivable()->getLastVehicle();
-        vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
-        vehicle->setLeader(leader);
 
-        vehicleActiveCount++;
-        totalVehicleCnt++;
+        if (pushToDrivable)
+            ((Lane *) vehicle->getCurDrivable())->pushWaitingVehicle(vehicle);
     }
+    
+    // void Engine::pushVehicle(Vehicle *vehicle)
+    // {
+    //     size_t threadIndex = rnd() % threadNum;
+    //     vehiclePool.emplace(vehicle->getPriority(), std::make_pair(vehicle, threadIndex)); // 加入车流
+    //     if (vehicleMap.count(vehicle->getId())) {
+    //         std::cerr<<"repeat insert existed vehicle"<<std::endl;
+    //         throw "repeat insert existed vehicle";
+    //     }
+
+    //     vehicleMap.emplace(vehicle->getId(), vehicle);
+    //     threadVehiclePool[threadIndex].insert(vehicle);
+    //     Vehicle *leader = vehicle->getCurDrivable()->getLastVehicle();
+    //     vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
+    //     vehicle->setLeader(leader);
+
+    //     vehicleActiveCount++;
+    //     totalVehicleCnt++;
+    // }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
     void Engine::threadGetAction(std::set<Vehicle *> &vehicles)

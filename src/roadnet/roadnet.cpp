@@ -8,7 +8,7 @@
 #include <algorithm>
 
 namespace SEUTraffic{
-    // 计算该drivable的points的距离
+    // 计算points中相邻两个坐标点的距离和
     static double getLengthOfPoints(const std::vector<Point> &points) {
         double length = 0.0;
         for (size_t i = 0; i + 1 < points.size(); i++)
@@ -19,9 +19,12 @@ namespace SEUTraffic{
     // wyy modify: add getPointsByDis, and Dir
     // wyy function: 根据车在lane的dis计算车的point
     static Point getPointByDistance(const std::vector<Point> &points, double dis) {
+        //yzh：dis为dis和points长度中的较小值；
         dis = min2double(max2double(dis, 0), getLengthOfPoints(points));
+        //yzh：dis小于等于0时，返回第一个点的坐标；
         if (dis <= 0.0)
             return points[0];
+         //yzh：dis大于0，小于points长度时，返回点的对应坐标
         for (size_t i = 1; i < points.size(); i++) {
             double len = (points[i - 1] - points[i]).len();
             if (dis > len)
@@ -29,6 +32,7 @@ namespace SEUTraffic{
             else
                 return points[i - 1] + (points[i] - points[i - 1]) * (dis / len);
         }
+        //yzh：dis大于points的长度时，返回最后一个point的坐标
         return points.back();
     }
 
@@ -36,6 +40,7 @@ namespace SEUTraffic{
         return Point((p2.x - p1.x) * a + p1.x, (p2.y - p1.y) * a + p1.y);
     }
 
+    //yzh: read roadnet.json文件
     bool RoadNet::loadFromJson(std::string jsonFileName){
         rapidjson::Document document;
         if (!readJsonFromFile(jsonFileName, document)){
@@ -86,31 +91,7 @@ namespace SEUTraffic{
 
                 //check
                 if (!roads[i].startIntersection) throw JsonFormatError("startIntersection does not exist");
-                if (!roads[i].endIntersection)
-                    throw JsonFormatError("endIntersection does not exist.");
-
-                // read length
-                const auto& pointsValue = getJsonMemberArray("points", curRoadValue);
-                // wyy modify: read road points
-                for (const auto &pointValue : pointsValue.GetArray()) {
-                    path.emplace_back("point[" + std::to_string(roads[i].points.size()) + "]");
-                    if (!pointValue.IsObject())
-                        throw JsonTypeError("point of road", "object");
-                    double x = getJsonMember<double>("x", pointValue);
-                    double y = getJsonMember<double>("y", pointValue);
-                    // for every road add its position
-                    roads[i].points.emplace_back(x, y);
-                    path.pop_back();
-                }
-                // wyy end modify
-                const auto& pointValue = pointsValue[0];
-                double x1 = getJsonMember<double>("x", pointValue);
-                double y1 = getJsonMember<double>("y", pointValue);
-
-                const auto& pointValue2 = pointsValue[1];
-                double x2 = getJsonMember<double>("x", pointValue2);
-                double y2 = getJsonMember<double>("y", pointValue2);
-                double length = sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+                if (!roads[i].endIntersection) throw JsonFormatError("endIntersection does not exist.");
 
                 //read lanes
                 const auto &lanesValue = getJsonMemberArray("lanes", curRoadValue);
@@ -123,8 +104,6 @@ namespace SEUTraffic{
 
                     double width = getJsonMember<double>("width", laneValue);
                     double maxSpeed = getJsonMember<double>("maxSpeed", laneValue);
-                    // Lane lane(width, maxSpeed, laneIndex, &roads[i]);
-                    // roads[i].lanes.emplace_back(&lane);
                     roads[i].lanes.emplace_back(width, maxSpeed, laneIndex, &roads[i]);
                     laneIndex++;
                     path.pop_back();
@@ -187,7 +166,7 @@ namespace SEUTraffic{
                 // read width
                 intersections[i].width = getJsonMember<double>("width", curInterValue);
 
-                // read laneLinks
+                // read roadLinks
                 const auto &roadLinksValue = getJsonMemberArray("roadLinks", curInterValue);
                 intersections[i].roadLinks.resize(roadLinksValue.Size());
                 int roadLinkIndex = 0;
@@ -342,10 +321,16 @@ namespace SEUTraffic{
             lanes.insert(lanes.end(), roadLanes.begin(), roadLanes.end());
             drivables.insert(drivables.end(), roadLanes.begin(), roadLanes.end());
         }
+
+        for (auto &intersection : intersections) {
+            auto &intersectionLaneLinks = intersection.getLaneLinks();
+            laneLinks.insert(laneLinks.end(), intersectionLaneLinks.begin(), intersectionLaneLinks.end());
+            drivables.insert(drivables.end(), intersectionLaneLinks.begin(), intersectionLaneLinks.end());
+        }
         return true;
     }
-    // wyy end modify
 
+    //yzh:生成前端道路静态展示需要的JSON文件
     rapidjson::Value RoadNet::convertToJson(rapidjson::Document::AllocatorType &allocator) {
         rapidjson::Value jsonRoot(rapidjson::kObjectType);
         // write nodes
@@ -415,16 +400,13 @@ namespace SEUTraffic{
         return jsonRoot;
     }
 
-    void RoadNet::reset() // todo: road.reset()
+    void RoadNet::reset()
     {
-        for (auto &road : roads)
-            road.reset();
-
-        for (auto& intersection : intersections) {
-            intersection.reset();
-        }
+        for (auto &road : roads)  road.reset();
+        for (auto& intersection : intersections) intersection.reset();
     }
 
+    //yzh:根据road的points计算出lane的points
     void Road::initLanesPoints() {
         double dsum = 0.0;
         std::vector<Point> roadPoints = this->points;
@@ -530,19 +512,12 @@ namespace SEUTraffic{
         }
     }
 
-    void Drivable::checkBelongRoad()
-    {
-        if (belongRoad == 0x00 || belongRoad == nullptr) {
-            std::cerr << "belong road is a nullptr" << std::endl;
-        }
-    }
-
     // wyy modify: add getPointsByDistance and getDir
     Point Drivable::getPointByDistance(double dis) const {
         return SEUTraffic::getPointByDistance(points, dis);
     }
 
-    // wyy: 根据车在lane上的dist求方向
+    // wyy: 根据车在lane上的dis求方向
     Point Drivable::getDirectionByDistance(double dis) const {
         double remain = dis;
         for (int i = 0; i + 1 < (int) points.size(); i++) {
@@ -554,7 +529,6 @@ namespace SEUTraffic{
         }
         return (points[points.size() - 1] - points[points.size() - 2]).unit();
     }
-
 
     const std::vector<LaneLink *> &Intersection::getLaneLinks() {
         if (laneLinks.size() > 0) return laneLinks;
@@ -649,13 +623,16 @@ namespace SEUTraffic{
     void RoadLink::reset() {
         for (auto &laneLink : laneLinks) laneLink.reset();
     }
-
+    
+    //yzh:清空LaneLink中的vehicles
     void LaneLink::reset() {
+         vehicles.clear();
     }
 
+    //yzh:清空vehicles和waitingBuffer中的车辆
     void Lane::reset()
     {
-        waitingBuffer.clear(); // 这是啥
+        waitingBuffer.clear();
         vehicles.clear();
     }
 
@@ -753,6 +730,7 @@ namespace SEUTraffic{
         return width;
     }
 
+    //yzh：road的长度等于各lane长度之和
     double Road::getLength() const{
         double length = 0;
         for (const auto &lane : getLanes()){

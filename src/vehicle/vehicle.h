@@ -65,8 +65,15 @@ namespace SEUTraffic{
 
         double totalDist = 0; // record for avg speed compute
 
+        double enterTime;
+        Flow *flow;
+
     public:
         Vehicle(const std::string& id, VehicleInfo& vehicleInfo, int startTime, Engine *engine);
+        
+        Vehicle(const VehicleInfo &init, const std::string &id, Engine *engine, Flow *flow = nullptr);
+
+        Vehicle(const Vehicle &vehicle, const std::string &id, Engine *engine, Flow *flow = nullptr);
 
         void setSpeed(double speed);
 
@@ -185,6 +192,12 @@ namespace SEUTraffic{
 
         // wyy modify: vehicle get points
         Point getPoint() const;
+
+        //yzh modify
+        Lane * getCurLane() const {
+            if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
+            else return nullptr;
+        }
 
     };
 }
