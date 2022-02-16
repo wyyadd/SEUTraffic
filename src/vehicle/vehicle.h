@@ -194,10 +194,7 @@ namespace SEUTraffic{
         Point getPoint() const;
 
         //yzh modify
-        Lane * getCurLane() const {
-            if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
-            else return nullptr;
-        }
+        Lane * getCurLane() const;
 
     };
 }

@@ -48,7 +48,6 @@ namespace SEUTraffic
         return vehicleInfo.getRouter().getNextDrivable(1);
     }
 
-
     Intersection* Vehicle::getNextIntersection()
     {
         return vehicleInfo.getRouter().getNextInter();
@@ -161,5 +160,10 @@ namespace SEUTraffic
         //     return cur;
         // }
         // }
+    }
+
+    Lane* Vehicle::getCurLane() const  {
+        if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
+        else return nullptr;
     }
 }

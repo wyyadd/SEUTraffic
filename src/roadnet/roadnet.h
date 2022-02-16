@@ -296,6 +296,7 @@ namespace SEUTraffic{
         Lane* getendLane() const { return endLane; }
 
         // wyy modify: lanelink avaliable
+        // yzh：laneLink可用 与 roadLink可用 等价？？？
         bool isAvailable() const { return roadLink->isAvailable(); }
 
         void reset();
@@ -311,9 +312,7 @@ namespace SEUTraffic{
 
         RoadLinkType getRoadLinkType() const { return this->roadLink->type; }
 
-        bool isAvailable() const { return roadLink->isAvailable(); }//yzh：laneLink可用 与 roadLink可用 等价？？？
-
-        bool isTurn() const { return roadLink->isTurn(); }        
+        bool isTurn() const { return roadLink->isTurn(); }
 
     };
 
