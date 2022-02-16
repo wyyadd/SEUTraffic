@@ -109,6 +109,10 @@ namespace SEUTraffic
         return A.x * B.x + A.y * B.y;
     }
 
+    double calcDist(const Point &A, const Point &B){
+        return sqrt((A.x-B.x)*(A.x-B.x)+(A.y-B.y)*(A.y-B.y));
+    }
+
     double calcAng(Point A, Point B) {
         double ang = A.ang() - B.ang();
         double pi = acos(-1);

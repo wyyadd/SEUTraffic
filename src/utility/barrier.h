@@ -1,3 +1,5 @@
+#ifndef SEUTRAFFIC_BARRIER_H
+#define SEUTRAFFIC_BARRIER_H
 #include<cassert>
 #include<chrono>
 #include<condition_variable>
@@ -30,3 +32,4 @@ namespace SEUTraffic
             size_t counter[2], * currCounter;
     };
 }
+#endif // SEUTRAFFIC_BARRIER_H

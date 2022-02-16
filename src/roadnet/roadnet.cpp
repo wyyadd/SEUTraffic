@@ -37,19 +37,22 @@ namespace SEUTraffic{
     }
 
     Point RoadNet::getPoint(const Point &p1, const Point &p2, double a) {
-        return Point((p2.x - p1.x) * a + p1.x, (p2.y - p1.y) * a + p1.y);
+        return {(p2.x - p1.x) * a + p1.x, (p2.y - p1.y) * a + p1.y};
     }
 
-    //yzh: read roadnet.json文件
-    bool RoadNet::loadFromJson(std::string jsonFileName){
+    //yzh: read roadNet.json文件
+    bool RoadNet::loadFromJson(const std::string& jsonFileName){
         rapidjson::Document document;
         if (!readJsonFromFile(jsonFileName, document)){
-            std::cerr << "cannot open roadnet file" << std::endl;
+            std::cerr << "cannot open roadNet file" << std::endl;
             return false;
         }
+        /**
+         *  path is like a stack to detect and avoid errors
+         */
         std::list<std::string> path;
         if (!document.IsObject())
-            throw JsonTypeError("roadnet config file", "object");
+            throw JsonTypeError("roadNet config file", "object");
         try{
             const rapidjson::Value &interValues = getJsonMemberArray("intersections", document);
             const rapidjson::Value &roadValues = getJsonMemberArray("roads", document);
@@ -77,7 +80,7 @@ namespace SEUTraffic{
             }
             assert(path.empty());
 
-            // read roads
+            // read road
             path.emplace_back("roads");
             for (rapidjson::SizeType i = 0; i < roadValues.Size();i++){
                 path.emplace_back(roads[i].getId());
@@ -101,27 +104,34 @@ namespace SEUTraffic{
                     if (!laneValue.IsObject()){
                         throw JsonTypeError("lane","object");
                     }
-
-                    double width = getJsonMember<double>("width", laneValue);
-                    double maxSpeed = getJsonMember<double>("maxSpeed", laneValue);
+                    auto width = getJsonMember<double>("width", laneValue);
+                    auto maxSpeed = getJsonMember<double>("maxSpeed", laneValue);
                     roads[i].lanes.emplace_back(width, maxSpeed, laneIndex, &roads[i]);
                     laneIndex++;
                     path.pop_back();
                 }
 
                 for (auto& lane : roads[i].lanes) {
-                    lane.length = length;
                     drivableMap[lane.getId()] = &lane;
                 }
                 path.pop_back();
+
+                //  read points
+                const auto &pointsValue = getJsonMemberArray("points", curRoadValue);
+                for (const auto &pointValue : pointsValue.GetArray()) {
+                    path.emplace_back("point[" + std::to_string(roads[i].points.size()) + "]");
+                    if (!pointValue.IsObject())
+                        throw JsonTypeError("point of road", "object");
+                    auto x = getJsonMember<double>("x", pointValue);
+                    auto y = getJsonMember<double>("y", pointValue);
+                    // for every road add its position
+                    roads[i].points.emplace_back(x, y);
+                    path.pop_back();
+                }
             }
             path.pop_back();
             assert(path.empty());
 
-            // wyy modify: init lanes points
-            for (rapidjson::SizeType i = 0; i < roadValues.Size(); i++) {
-                roads[i].initLanesPoints();
-            }
             // read intersections
             std::map<std::string, RoadLinkType> typeMap = {{"turn_left", turn_left},
                                                        {"turn right" , turn_right},
@@ -136,11 +146,11 @@ namespace SEUTraffic{
                     return false;
                 }
 
-                // wyy modify: intesection read points
+                // wyy modify: intersection read points
                 const auto &pointValue = getJsonMemberObject("point", curInterValue);
                 intersections[i].isVirtual = getJsonMember<bool>("virtual", curInterValue);
-                double x = getJsonMember<double>("x", pointValue);
-                double y = getJsonMember<double>("y", pointValue);
+                auto x = getJsonMember<double>("x", pointValue);
+                auto y = getJsonMember<double>("y", pointValue);
                 intersections[i].point = Point(x, y);
                 // wyy end modify
 
@@ -238,13 +248,13 @@ namespace SEUTraffic{
                             Point mid1 = Point(start.x + gap1X,start.y + gap1Y);
                             Point mid2 = Point(end.x + gap2X,end.y + gap2Y);
                             int numPoints = 10;
-                            for (int i = 0; i <= numPoints; i++) {
-                                Point p1 = getPoint(start, mid1, i / double(numPoints));
-                                Point p2 = getPoint(mid1, mid2, i / double(numPoints));
-                                Point p3 = getPoint(mid2, end, i / double(numPoints));
-                                Point p4 = getPoint(p1, p2, i / double(numPoints));
-                                Point p5 = getPoint(p2, p3, i / double(numPoints));
-                                Point p6 = getPoint(p4, p5, i / double(numPoints));
+                            for (int j = 0; j <= numPoints; j++) {
+                                Point p1 = getPoint(start, mid1, j / double(numPoints));
+                                Point p2 = getPoint(mid1, mid2, j / double(numPoints));
+                                Point p3 = getPoint(mid2, end, j / double(numPoints));
+                                Point p4 = getPoint(p1, p2, j / double(numPoints));
+                                Point p5 = getPoint(p2, p3, j / double(numPoints));
+                                Point p6 = getPoint(p4, p5, j / double(numPoints));
                                 laneLink.points.emplace_back(p6.x, p6.y);
                             }
                         }
@@ -256,7 +266,7 @@ namespace SEUTraffic{
                         // wyy modify: lanelink length
                         laneLink.length = getLengthOfPoints(laneLink.points);
                         //laneLink.length = 300;
-                        startLane->lanelinks.push_back(&laneLink);
+                        startLane->laneLinks.push_back(&laneLink);
                         drivableMap.emplace(laneLink.getId(), &laneLink);
                         path.pop_back();
                     }
@@ -303,7 +313,7 @@ namespace SEUTraffic{
             path.pop_back();
             assert(path.empty());
         }catch(const JsonFormatError &e){
-            std::cerr << "Error occured when reading the roadnet file: " << std::endl;
+            std::cerr << "Error occured when reading the roadNet file: " << std::endl;
             for (const auto &node : path){
                 std::cerr << "/" << node;
             }
@@ -335,21 +345,21 @@ namespace SEUTraffic{
         rapidjson::Value jsonRoot(rapidjson::kObjectType);
         // write nodes
         rapidjson::Value jsonNodes(rapidjson::kArrayType);
-        for (size_t i = 0; i < intersections.size(); ++i) {
+        for (auto & intersection : intersections) {
             rapidjson::Value jsonNode(rapidjson::kObjectType), jsonPoint(rapidjson::kArrayType);
             rapidjson::Value idValue;
-            idValue.SetString(rapidjson::StringRef(intersections[i].id.c_str()));
+            idValue.SetString(rapidjson::StringRef(intersection.id.c_str()));
             jsonNode.AddMember("id", idValue, allocator);
-            jsonPoint.PushBack(intersections[i].point.x, allocator);
-            jsonPoint.PushBack(intersections[i].point.y, allocator);
+            jsonPoint.PushBack(intersection.point.x, allocator);
+            jsonPoint.PushBack(intersection.point.y, allocator);
             jsonNode.AddMember("point", jsonPoint, allocator);
-            jsonNode.AddMember("virtual", intersections[i].isVirtual, allocator);
-            if (!intersections[i].isVirtual) {
-                jsonNode.AddMember("width", intersections[i].width, allocator);
+            jsonNode.AddMember("virtual", intersection.isVirtual, allocator);
+            if (!intersection.isVirtual) {
+                jsonNode.AddMember("width", intersection.width, allocator);
             }
 
             rapidjson::Value jsonOutline(rapidjson::kArrayType);
-            for (auto &point: intersections[i].getOutline()) {
+            for (auto &point: intersection.getOutline()) {
                 jsonOutline.PushBack(point.x, allocator);
                 jsonOutline.PushBack(point.y, allocator);
             }
@@ -360,38 +370,38 @@ namespace SEUTraffic{
 
         //write edges
         rapidjson::Value jsonEdges(rapidjson::kArrayType);
-        for (size_t i = 0; i < roads.size(); ++i) {
+        for (auto & road : roads) {
             rapidjson::Value jsonEdge(rapidjson::kObjectType);
             rapidjson::Value jsonPoints(rapidjson::kArrayType);
             rapidjson::Value jsonLaneWidths(rapidjson::kArrayType);
             rapidjson::Value jsonDirs(rapidjson::kArrayType);
 
             rapidjson::Value idValue;
-            idValue.SetString(rapidjson::StringRef(roads[i].id.c_str()));
+            idValue.SetString(rapidjson::StringRef(road.id.c_str()));
             jsonEdge.AddMember("id", idValue, allocator);
             rapidjson::Value startValue;
-            if (roads[i].startIntersection)
-                startValue.SetString(rapidjson::StringRef(roads[i].startIntersection->id.c_str()));
+            if (road.startIntersection)
+                startValue.SetString(rapidjson::StringRef(road.startIntersection->id.c_str()));
             else
                 startValue.SetString("null");
             jsonEdge.AddMember("from", startValue, allocator);
 
             rapidjson::Value endValue;
-            if (roads[i].endIntersection)
-                endValue.SetString(rapidjson::StringRef(roads[i].endIntersection->id.c_str()));
+            if (road.endIntersection)
+                endValue.SetString(rapidjson::StringRef(road.endIntersection->id.c_str()));
             else
                 endValue.SetString("null");
             jsonEdge.AddMember("to", endValue, allocator);
-            for (size_t j = 0; j < roads[i].points.size(); ++j) {
+            for (size_t j = 0; j < road.points.size(); ++j) {
                 rapidjson::Value jsonPoint(rapidjson::kArrayType);
-                jsonPoint.PushBack(roads[i].points[j].x, allocator);
-                jsonPoint.PushBack(roads[i].points[j].y, allocator);
+                jsonPoint.PushBack(road.points[j].x, allocator);
+                jsonPoint.PushBack(road.points[j].y, allocator);
                 jsonPoints.PushBack(jsonPoint, allocator);
             }
             jsonEdge.AddMember("points", jsonPoints, allocator);
-            jsonEdge.AddMember("nLane", static_cast<int>(roads[i].lanes.size()), allocator);
-            for (size_t j = 0; j < roads[i].lanes.size(); ++j) {
-                jsonLaneWidths.PushBack(roads[i].lanes[j].width, allocator);
+            jsonEdge.AddMember("nLane", static_cast<int>(road.lanes.size()), allocator);
+            for (size_t j = 0; j < road.lanes.size(); ++j) {
+                jsonLaneWidths.PushBack(road.lanes[j].width, allocator);
             }
             jsonEdge.AddMember("laneWidths", jsonLaneWidths, allocator);
             jsonEdges.PushBack(jsonEdge, allocator);
@@ -512,6 +522,15 @@ namespace SEUTraffic{
         }
     }
 
+    std::vector<LaneLink *> Lane::getLaneLinksToRoad(const Road *road) const {
+        std::vector<LaneLink *> ret;
+        for (auto &laneLink : laneLinks) {
+            if (laneLink->getEndLane()->getBelongRoad() == road)
+                ret.push_back(laneLink);
+        }
+        return ret;
+    }
+
     // wyy modify: add getPointsByDistance and getDir
     Point Drivable::getPointByDistance(double dis) const {
         return SEUTraffic::getPointByDistance(points, dis);
@@ -523,16 +542,21 @@ namespace SEUTraffic{
         for (int i = 0; i + 1 < (int) points.size(); i++) {
             double len = (points[i + 1] - points[i]).len();
             if (remain < len)
+                // 距离dis最近两点的单位向量
                 return (points[i + 1] - points[i]).unit();
             else
                 remain -= len;
         }
+        // 最后两点的单位向量
         return (points[points.size() - 1] - points[points.size() - 2]).unit();
     }
 
     const std::vector<LaneLink *> &Intersection::getLaneLinks() {
         if (laneLinks.size() > 0) return laneLinks;
-        throw "nothing about lanelink. wrong.";
+        for (auto &roadLink : roadLinks) {
+            auto &roadLaneLinks = roadLink.getLaneLinkPointers();
+            laneLinks.insert(laneLinks.end(), roadLaneLinks.begin(), roadLaneLinks.end());
+        }
         return laneLinks;
     }
 
@@ -632,7 +656,7 @@ namespace SEUTraffic{
     //yzh:清空vehicles和waitingBuffer中的车辆
     void Lane::reset()
     {
-        waitingBuffer.clear();
+//        waitingBuffer.clear();
         vehicles.clear();
     }
 
@@ -680,8 +704,8 @@ namespace SEUTraffic{
             for (RoadLink rlink : roadLinks) { // 这里的逻辑写错了
                 if (roadLinkAvailable[rlink.getIndex()]) {
                     for (auto& lanelink : rlink.getLaneLinks()) {
-                        Lane* stlane = lanelink.getstartLane();
-                        Lane* edlane = lanelink.getendLane();
+                        Lane* stlane = lanelink.getStartLane();
+                        Lane* edlane = lanelink.getEndLane();
                         startLanes.insert(stlane);
                         endLanes.insert(edlane);
                     }
@@ -739,9 +763,9 @@ namespace SEUTraffic{
         return length;
     }
 
-    std::vector<Lane*>& Road::getLanePointers()
+    const std::vector<Lane*>& Road::getLanePointers()
     {
-        if (lanePointers.size()) return lanePointers;
+        if (!lanePointers.empty()) return lanePointers;
         for (auto& lane : lanes) {
             lanePointers.push_back(&lane);
         }

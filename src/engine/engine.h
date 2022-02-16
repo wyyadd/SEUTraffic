@@ -1,3 +1,5 @@
+#ifndef SEUTRAFFIC_ENGINE_H
+#define SEUTRAFFIC_ENGINE_H
 #include "flow/flow.h"
 #include "roadnet/roadnet.h"
 #include "utility/barrier.h"
@@ -16,14 +18,14 @@ namespace SEUTraffic{
             return a.second > b.second;
         }
 
-        std::map<int, std::pair<Vehicle *, int>> vehiclePool;
+        std::map<size_t, std::pair<Vehicle *, int>> vehiclePool;
         std::map<std::string, Vehicle *> vehicleMap;
         std::vector<std::set<Vehicle *>> threadVehiclePool;
         std::vector<std::vector<Road *>> threadRoadPool;
         std::vector<std::vector<Intersection *>> threadIntersectionPool;
         std::vector<std::vector<Drivable *>> threadDrivablePool;
         std::vector<Flow> flows;
-        RoadNet roadnet;
+        RoadNet roadNet;
         int threadNum;
         double interval;
         std::vector<std::pair<Vehicle*, double>> pushBuffer;
@@ -91,7 +93,7 @@ namespace SEUTraffic{
 
         void step(int interval, std::map<std::string, int>& actions);
 
-        bool checkPriority(int priority);
+        bool checkPriority(size_t priority);
 
         void pushVehicle(Vehicle *const vehicle, bool pushToDrivable = true);
 
@@ -101,7 +103,7 @@ namespace SEUTraffic{
 
         void threadUpdateAction(std::set<Vehicle*>& vehicles);
 
-        void threadupdateLeaderAndGap(const std::vector<Drivable*>& drivables);
+        void threadUpdateLeaderAndGap(const std::vector<Drivable*>& drivables);
 
         double getAverageTravelTime();
 
@@ -124,12 +126,12 @@ namespace SEUTraffic{
 
         RoadNet getRoadnet()
         {
-            return roadnet;
+            return roadNet;
         }
 
         std::vector<std::string> getInterIds()
         {
-            return roadnet.getInterIds();
+            return roadNet.getInterIds();
         }
 
         size_t getVehicleCount() const;
@@ -163,3 +165,5 @@ namespace SEUTraffic{
     };
 
 }
+
+#endif //SEUTRAFFIC_ENGINE_H

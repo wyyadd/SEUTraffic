@@ -110,10 +110,53 @@ namespace SEUTraffic{
 
         double getLength() const;
 
-        std::vector<Lane *> &getLanePointers();
+        const std::vector<Lane *> & getLanePointers();
 
         // wyy modify: log
         double averageLength() const;
+    };
+
+    enum RoadLinkType{
+        go_straight = 3, turn_left = 2, turn_right = 1
+    };
+
+    class RoadLink {
+        friend class RoadNet;
+
+        friend class LaneLink;
+
+    private:
+        Intersection *intersection = nullptr;
+        Road *startRoad = nullptr;
+        Road *endRoad = nullptr;
+        RoadLinkType type;
+        std::vector<LaneLink> laneLinks;
+        std::vector<LaneLink *> laneLinkPointers;
+        int index;
+    public:
+        const std::vector<LaneLink> &getLaneLinks() const {return this->laneLinks; }
+
+        std::vector<LaneLink> &getLaneLinks() { return this->laneLinks; }
+
+        std::vector<LaneLink *> &getLaneLinkPointers();
+
+        Road *getStartRoad() const {return this->startRoad; }
+
+        Road *getEndRoad() const { return this->endRoad; }
+
+        bool isAvailable() const
+        {
+            return this->intersection->trafficLight.getCurrentPhase().roadLinkAvailable[this->index];
+        }
+
+        bool isTurn() const {
+            return this-> type == turn_left || type == turn_right;
+        }
+
+        void reset();
+
+        int getIndex() { return index; }
+
     };
 
     class Drivable{
@@ -185,7 +228,7 @@ namespace SEUTraffic{
     private:
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
-        std::deque<Vehicle *> waitingBuffer; // TODO
+//        std::deque<Vehicle *> waitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
 
     public:
@@ -213,6 +256,8 @@ namespace SEUTraffic{
             return belongRoad->endIntersection;
         }
 
+        std::vector<LaneLink *> getLaneLinksToRoad(const Road *road) const;
+
         void reset();
 
         //yzh:add fellow function
@@ -222,56 +267,13 @@ namespace SEUTraffic{
         std::vector<LaneLink *> &getLaneLinks() { return this->laneLinks; }
 
         /* waiting buffer */
-        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
+//        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
 
-        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
+//        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
 
-        void pushWaitingVehicle(Vehicle *vehicle) {
-            waitingBuffer.emplace_back(vehicle);
-        }
-    };
-
-    enum RoadLinkType{
-        go_straight = 3, turn_left = 2, turn_right = 1
-    };
-
-    class RoadLink {
-        friend class RoadNet;
-
-        friend class LaneLink;
-
-    private:
-        Intersection *intersection = nullptr;
-        Road *startRoad = nullptr;
-        Road *endRoad = nullptr;
-        RoadLinkType type;
-        std::vector<LaneLink> laneLinks;
-        std::vector<LaneLink *> laneLinkPointers;
-        int index;
-    public:
-        const std::vector<LaneLink> &getLaneLinks() const {return this->laneLinks; }
-
-        std::vector<LaneLink> &getLaneLinks() { return this->laneLinks; }
-
-        std::vector<LaneLink *> &getLaneLinkPointers();
-
-        Road *getStartRoad() const {return this->startRoad; }
-
-        Road *getEndRoad() const { return this->endRoad; }
-
-        bool isAvailable() const
-        {
-            return this->intersection->trafficLight.getCurrentPhase().roadLinkAvailable[this->index];
-        }
-
-        bool isTurn() const {
-            return this-> type == turn_left || type == turn_right;
-        }
-
-        void reset();
-
-        int getIndex() { return index; }
-
+//        void pushWaitingVehicle(Vehicle *vehicle) {
+//            waitingBuffer.emplace_back(vehicle);
+//        }
     };
 
     class LaneLink : public Drivable {
@@ -291,11 +293,12 @@ namespace SEUTraffic{
             return (startLane ? startLane->getId() : "") + "_TO_" + (endLane ? endLane->getId() : "");
         }
 
-        Lane *getstartLane() const { return startLane; }
+        Lane *getStartLane() const { return startLane; }
 
-        Lane* getendLane() const { return endLane; }
+        Lane* getEndLane() const { return endLane; }
 
         // wyy modify: lanelink avaliable
+        // yzh：laneLink可用 与 roadLink可用 等价？？？
         bool isAvailable() const { return roadLink->isAvailable(); }
 
         void reset();
@@ -311,9 +314,7 @@ namespace SEUTraffic{
 
         RoadLinkType getRoadLinkType() const { return this->roadLink->type; }
 
-        bool isAvailable() const { return roadLink->isAvailable(); }//yzh：laneLink可用 与 roadLink可用 等价？？？
-
-        bool isTurn() const { return roadLink->isTurn(); }        
+        bool isTurn() const { return roadLink->isTurn(); }
 
     };
 
@@ -331,10 +332,10 @@ namespace SEUTraffic{
         std::vector<std::string> interIds;
 
         // wyy modify: get Points
-        Point getPoint(const Point &p1, const Point &p2, double a);
+        static Point getPoint(const Point &p1, const Point &p2, double a);
 
     public:
-        bool loadFromJson(std::string jsonFileName);
+        bool loadFromJson(const std::string& jsonFileName);
 
         rapidjson::Value convertToJson(rapidjson::Document::AllocatorType &allocator);
 

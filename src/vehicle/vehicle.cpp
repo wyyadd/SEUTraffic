@@ -5,32 +5,19 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <utility>
 
 namespace SEUTraffic
 {
 
-    Vehicle::Vehicle (const std::string &id, VehicleInfo &vehicleInfo, int startTime, Engine *engine)
-        :id(id), vehicleInfo(vehicleInfo) , startTime(startTime), engine(engine){
+    Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
+        : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
         controllerInfo.dis = 0;
-        controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
-    };
-
-    Vehicle::Vehicle(const VehicleInfo &vehicleInfo, const std::string &id, Engine *engine, Flow *flow)
-        : vehicleInfo(vehicleInfo),id(id), engine(engine),flow(flow){
-        controllerInfo.dis = 0;
-        controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
-        controllerInfo.running = true;
-
+        planned = vehicleInfo.getRouter().initRoutePlan();
+        controllerInfo.drivable = planned[0]; // 得到第一条Lane
         while (engine->checkPriority(priority = engine->rnd()));
-        enterTime = engine->getCurrentTime();
-    }
-
-    Vehicle::Vehicle(const Vehicle &vehicle, const std::string &id, Engine *engine, Flow *flow)
-        : vehicleInfo(vehicle.vehicleInfo), controllerInfo(vehicle.controllerInfo),
-         buffer(vehicle.buffer), id(id), engine(engine),flow(flow){
-        while (engine->checkPriority(priority = engine->rnd()));
-        enterTime = vehicle.enterTime;
+        startTime = engine->getCurrentTime();
     }
 
     Drivable* Vehicle::getCurDrivable() const
@@ -40,14 +27,11 @@ namespace SEUTraffic
 
     Drivable* Vehicle::getNextDrivable()
     {
-        return vehicleInfo.getRouter().getNextDrivable(1);
+        int i = currentDrivableIndex + 1;
+        if (i < this->planned.size()) {
+            return planned[i];
+        } else return nullptr;
     }
-
-    Drivable* Vehicle::getNextDrivable() const
-    {
-        return vehicleInfo.getRouter().getNextDrivable(1);
-    }
-
 
     Intersection* Vehicle::getNextIntersection()
     {
@@ -56,27 +40,24 @@ namespace SEUTraffic
 
     void Vehicle::setLeader(Vehicle* leaderCar)
     {
-
         // 设置leader
         controllerInfo.leader = leaderCar;
-        if (leaderCar == nullptr) {
-            controllerInfo.gap = 0;
-        } else {
-            // wyy Q: if not equal, laneLink?
-            if (leaderCar->getCurDrivable()->getId() == getCurDrivable()->getId())
-                controllerInfo.gap = leaderCar->getDistance() - getDistance() - leaderCar->getLen();
-            else {
-                controllerInfo.gap = leaderCar->getDistance() + getCurDrivable()->getLength() - getDistance() - leaderCar->getLen();
-            }
-        }
+//        if (leaderCar == nullptr) {
+//            controllerInfo.gap = 0;
+//        } else {
+//            if (leaderCar->getCurDrivable()->getId() == getCurDrivable()->getId())
+//                controllerInfo.gap = leaderCar->getDistance() - getDistance() - leaderCar->getLen();
+//            else {
+//                controllerInfo.gap = leaderCar->getDistance() + getCurDrivable()->getLength() - getDistance() - leaderCar->getLen();
+//            }
+//        }
     }
 
     void Vehicle::update()
     {
-        // wyy Q: what does this set mean?
         if (buffer.isEndSet) {
             controllerInfo.end = buffer.end;
-            if (buffer.end== true)
+            if (buffer.end)
                 controllerInfo.running = false;
             else controllerInfo.running = true;
             buffer.isEndSet = false;
@@ -92,7 +73,6 @@ namespace SEUTraffic
         {
             controllerInfo.drivable = buffer.drivable;
             buffer.isDrivableSet = false;
-            vehicleInfo.getRouter().update(controllerInfo.drivable);
         }
     }
 
@@ -119,7 +99,7 @@ namespace SEUTraffic
         }
         // add routing info
         std::string route;
-        for (const auto r : vehicleInfo.getRouter().getFollowingRoads()) {
+        for (const auto r : vehicleInfo.getRouter().getRoute()) {
             route +=r->getId() + " ";
         }
         info["route"] = route;
@@ -161,5 +141,10 @@ namespace SEUTraffic
         //     return cur;
         // }
         // }
+    }
+
+    Lane* Vehicle::getCurLane() const  {
+        if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
+        else return nullptr;
     }
 }

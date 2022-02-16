@@ -1,5 +1,5 @@
-#ifndef CITYFLOW_TYPEDEF_H
-#define CITYFLOW_TYPEDEF_H
+#ifndef SEUTRAFFIC_UTILITY_H
+#define SEUTRAFFIC_UTILITY_H
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -104,6 +104,7 @@ namespace SEUTraffic
     Point operator-(const Point &A);
     double crossMultiply(const Point &A, const Point &B);
     double dotMultiply(const Point &A, const Point &B);
+    double calcDist(const Point &A, const Point &B);
     double calcAng(Point A, Point B);
 
     Point calcIntersectPoint(Point A, Point B, Point C, Point D);
@@ -146,4 +147,4 @@ namespace SEUTraffic
         return str;
     }
 }
-#endif
+#endif // SEUTRAFFIC_UTILITY_H

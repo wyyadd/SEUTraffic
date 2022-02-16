@@ -24,7 +24,7 @@ namespace SEUTraffic{
             return roadLinkAvailable;
         }
 
-        int getPhaseIndex()
+        unsigned int getPhaseIndex() const
         {
             return phase;
         }
@@ -58,4 +58,4 @@ namespace SEUTraffic{
         void reset();
     };
 }
-#endif
+#endif // SEUTRAFFIC_TRAFFICLIGHT_H

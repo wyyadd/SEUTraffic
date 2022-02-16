@@ -3,59 +3,105 @@
 
 #include <queue>
 #include <set>
+#include <utility>
 
-namespace SEUTraffic{
-    Router::Router(const std::vector<Road *> &roads, const std::vector<Intersection *> &inters) : roads(roads), inters(inters){
-        initRoutePlan();
+namespace SEUTraffic {
+    Router::Router(std::vector<Road *> roads, std::vector<Intersection *> inters)
+            : route(std::move(roads)),inters(std::move(inters)){
+        srand((unsigned)time(nullptr));
     }
 
-    void Router::initRoutePlan(){
-        for (int i = 0; i < roads.size(); i++) {
-            followingRoads.push_back(roads[i]);
-            Lane *drivable = getNextLane(i);
-            planned.push_back(drivable); //todo: 添加指针，不知道可不可以这么加入，感觉应该可以
+    std::vector<Drivable*> Router::initRoutePlan() {
+        std::vector<Drivable*> planned;
+        planned.push_back(getFirstDrivable());
+        for (int i = 0; i < 2 * route.size() - 2; i++) {
+            auto drivable = getNextDrivable(planned[i], i / 2);
+            planned.push_back(drivable);
         }
+        return planned;
     }
 
-    Lane *Router::getNextLane(int i){ // 初始化路线获得经过的lane
-        if (i == roads.size()-1){
-            Road *curRoad = roads[i];
-            Road *lastRoad = roads[i-1];
-            Intersection *lastInter = inters[i-1];
-            RoadLink lastRoadLink = lastInter->getRoadLink(lastRoad, curRoad);
-
-            int minIndexDif = std::numeric_limits<int>::max();
-            Lane *selectedLane = nullptr;
-            for (LaneLink laneLink : lastRoadLink.getLaneLinks()){
-                Lane *firstLane = laneLink.getstartLane();
-                Lane *nextLane = laneLink.getendLane();
-                int curLaneDiff = firstLane->getLaneIndex() - nextLane->getLaneIndex();
-                if (abs(curLaneDiff) < minIndexDif){
-                    minIndexDif = abs(curLaneDiff);
-                    selectedLane = nextLane;
+    Drivable * Router::getFirstDrivable() {
+        const std::vector<Lane *> &lanes = route[0]->getLanePointers();
+        if (route.size() == 1) {
+            return selectLane(nullptr, lanes);
+        } else {
+            std::vector<Lane *> candidateLanes;
+            for (auto lane: lanes) {
+                if (!lane->getLaneLinksToRoad(route[1]).empty()) {
+                    candidateLanes.push_back(lane);
                 }
             }
-            return selectedLane;
+            assert(!candidateLanes.empty());
+            return selectLane(nullptr, candidateLanes);
+        }
+    }
+
+    Drivable * Router::getNextDrivable(const Drivable *curDrivable, int curRoadIndex) {
+        if (curDrivable->isLaneLink()) {
+            return dynamic_cast<const LaneLink *>(curDrivable)->getEndLane();
         } else {
-            Road *curRoad = roads[i];
-            Road *nextRoad = roads[i+1];
-            Intersection* targetInter = inters[i];
-            // 大概怀疑一下这里是空的
-            RoadLink rlink = targetInter->getRoadLink(curRoad, nextRoad);
-            LaneLink laneLink = rlink.getLaneLinks()[0];
-            Lane *drivable = laneLink.getstartLane();
-            return drivable;
+            const Lane *curLane = dynamic_cast<const Lane *>(curDrivable);
+            auto tmpCurRoad = route.begin() + curRoadIndex;
+            while ((*tmpCurRoad) != curLane->getBelongRoad() && tmpCurRoad != route.end()) {
+                tmpCurRoad++;
+            }
+            assert(tmpCurRoad != route.end() && curLane->getBelongRoad() == (*tmpCurRoad));
+            if (tmpCurRoad == route.end() - 1) {
+                return nullptr;
+            } else if (tmpCurRoad == route.end() - 2) {
+                std::vector<LaneLink *> laneLinks = curLane->getLaneLinksToRoad(*(tmpCurRoad + 1));
+                return selectLaneLink(curLane, laneLinks);
+            } else {
+                std::vector<LaneLink *> laneLinks = curLane->getLaneLinksToRoad(*(tmpCurRoad + 1));
+                std::vector<LaneLink *> candidateLaneLinks;
+                for (auto laneLink: laneLinks) {
+                    Lane *nextLane = laneLink->getEndLane();
+                    if (!nextLane->getLaneLinksToRoad(*(tmpCurRoad + 2)).empty()) {
+                        candidateLaneLinks.push_back(laneLink);
+                    }
+                }
+                return selectLaneLink(curLane, candidateLaneLinks);
+            }
         }
     }
 
-    Lane* Router::getNextDrivable(int i) // 在后续的运行中使用，注意不要和上面的混用
-    {
-        if (i < this->planned.size()) {
-            return planned[i];
+    size_t Router::selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) {
+        assert(!lanes.empty());
+        if (curLane == nullptr) {
+            size_t index = random() % lanes.size();
+            return index;
         }
-        else return nullptr;
+        int laneDiff = std::numeric_limits<int>::max();
+        size_t selected = -1;
+        for (size_t i = 0; i < lanes.size(); ++i) {
+            auto curLaneDiff = (int) lanes[i]->getLaneIndex() - (int) curLane->getLaneIndex();
+            if (abs(curLaneDiff) < laneDiff) {
+                laneDiff = abs(curLaneDiff);
+                selected = i;
+            }
+        }
+        return selected;
     }
 
+    Lane *Router::selectLane(const Lane *curLane, const std::vector<Lane *> &lanes) {
+        if (lanes.empty()) {
+            return nullptr;
+        }
+        return lanes[selectLaneIndex(curLane, lanes)];
+    }
+
+    LaneLink *Router::selectLaneLink(const Lane *curLane, const std::vector<LaneLink *> &laneLinks) {
+        if (laneLinks.empty()) {
+            return nullptr;
+        }
+        std::vector<Lane *> lanes;
+        lanes.reserve(laneLinks.size());
+        for (auto laneLink: laneLinks) {
+            lanes.push_back(laneLink->getEndLane());
+        }
+        return laneLinks[selectLaneIndex(curLane, lanes)];
+    }
 
     Intersection *Router::getNextInter() //
     {
@@ -63,37 +109,6 @@ namespace SEUTraffic{
     }
 
     Road *Router::getFirstRoad() const {
-        return roads[0];
-    }
-
-    void Router::update(Drivable* drivable)
-    {
-        if (drivable == nullptr) {
-            planned.clear();
-            inters.clear();
-            followingRoads.clear();
-            return;
-        }
-        for (auto it = planned.begin(); it != planned.end(); ) {
-            if ( (*it) == drivable) {
-                break;
-            } else {
-                it = planned.erase(it);
-            }
-        }
-        for (auto it = inters.begin(); it != inters.end(); ) {
-            if ((*it) == drivable->getBelongRoad()->getEndIntersection()) { //这里出现了严重的bug，那么可能是一些奇怪的东西
-                break;
-            } else {
-                it = inters.erase(it);
-            }
-        }
-        for (auto it = followingRoads.begin(); it != followingRoads.end();) {
-            if ((*it) == drivable->getBelongRoad())
-                break;
-            else {
-                it = followingRoads.erase(it);
-            }
-        }
+        return route[0];
     }
 }
