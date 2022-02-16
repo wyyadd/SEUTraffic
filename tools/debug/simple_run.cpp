@@ -8,7 +8,7 @@
 using namespace SEUTraffic;
 
 int main() {
-    std::string configFile = "/home/wyyadd/SEUTraffic/examples/config.json";
+    std::string configFile = "examples/config.json";
     size_t totalStep = 200;
 
     Engine engine(configFile, 8);
@@ -16,11 +16,6 @@ int main() {
     time(&startTime);
     for (int i = 0; i < (int)totalStep; i++) {
         engine.nextStep();
-        //engine.getVehicleSpeed();
-        //engine.getLaneVehicles();
-        //engine.getLaneWaitingVehicleCount();
-        //engine.getVehicleDistance();
-        //engine.getCurrentTime();
     }
     time(&endTime);
     std::cout << "Total Step: " << totalStep << std::endl;
