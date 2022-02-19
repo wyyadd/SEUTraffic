@@ -18,12 +18,13 @@ namespace SEUTraffic{
 
     class Router{
     private:
-        std::vector<Road *> roads;
+        std::vector<Road *> route;
         std::vector<Intersection *> inters;
+        // TODO 增加lanelink, change to drivable
         std::vector<Lane*> planned;
         std::vector<Road *> followingRoads;
     public:
-        Router(const std::vector<Road *> &roads, const std::vector<Intersection *> &inters);
+        Router(std::vector<Road *> roads, std::vector<Intersection *> inters);
 
         void initRoutePlan();
 

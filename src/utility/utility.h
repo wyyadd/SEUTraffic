@@ -104,6 +104,7 @@ namespace SEUTraffic
     Point operator-(const Point &A);
     double crossMultiply(const Point &A, const Point &B);
     double dotMultiply(const Point &A, const Point &B);
+    double calcDist(const Point &A, const Point &B);
     double calcAng(Point A, Point B);
 
     Point calcIntersectPoint(Point A, Point B, Point C, Point D);

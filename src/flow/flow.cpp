@@ -12,14 +12,14 @@ namespace SEUTraffic {
             while (nowTime >= interval) {
                 Vehicle* vehicle = new Vehicle(vehicleTemplate, id + "_" + std::to_string(cnt++), engine, this);
                 //yzh:确保vehicle的priority唯一
+                // wyy corr: no need
                 int priority = vehicle->getPriority();
                 while (engine->checkPriority(priority)) priority = engine->rnd();
                 vehicle->setPriority(priority);
                 //yzh:将vehicle放进VehiclePool、VehicleMap、threadVehiclePool
                 engine->pushVehicle(vehicle, false);
                 //yzh:将vehicle放入FirstRoad的planRouteBuffer中
-                
-                //vehicle->getFirstRoad()->addPlanRouteVehicle(vehicle);
+//                vehicle->getFirstRoad()->addPlanRouteVehicle(vehicle);
                 nowTime -= interval;
             }
             nowTime += timeInterval;

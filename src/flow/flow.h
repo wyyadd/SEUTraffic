@@ -2,6 +2,7 @@
 #define SEUTRAFFIC_FLOW_H
 
 #include <iostream>
+#include <utility>
 
 #include "vehicle/vehicle.h"
 #include "vehicle/router.h"
@@ -9,7 +10,7 @@
 namespace SEUTraffic {
     class Engine;
 
-    struct VehicleInfo;
+    class VehicleInfo;
 
     class Flow {
     private:
@@ -26,10 +27,10 @@ namespace SEUTraffic {
         bool valid = true;
 
     public:
-        Flow(const VehicleInfo &vehicleTemplate, double timeInterval,
-            Engine *engine, int startTime, int endTime, const std::string &id) 
-            : vehicleTemplate(vehicleTemplate), interval(timeInterval),
-              startTime(startTime), endTime(endTime), engine(engine), id(id) {
+        Flow(VehicleInfo vehicleTemplate, double timeInterval,
+            Engine *engine, int startTime, int endTime, std::string id)
+            : vehicleTemplate(std::move(vehicleTemplate)), interval(timeInterval),
+              startTime(startTime), endTime(endTime), engine(engine), id(std::move(id)) {
             assert(timeInterval >= 1 || (startTime == endTime));
             nowTime = interval;
         }

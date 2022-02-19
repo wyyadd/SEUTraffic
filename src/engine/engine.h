@@ -101,7 +101,7 @@ namespace SEUTraffic{
 
         void threadUpdateAction(std::set<Vehicle*>& vehicles);
 
-        void threadupdateLeaderAndGap(const std::vector<Drivable*>& drivables);
+        void threadUpdateLeaderAndGap(const std::vector<Drivable*>& drivables);
 
         double getAverageTravelTime();
 

@@ -110,7 +110,7 @@ namespace SEUTraffic{
 
         double getLength() const;
 
-        std::vector<Lane *> &getLanePointers();
+        const std::vector<Lane *> & getLanePointers();
 
         // wyy modify: log
         double averageLength() const;
@@ -314,6 +314,8 @@ namespace SEUTraffic{
 
         bool isTurn() const { return roadLink->isTurn(); }
 
+        void initLength();
+
     };
 
     class RoadNet {
@@ -330,10 +332,10 @@ namespace SEUTraffic{
         std::vector<std::string> interIds;
 
         // wyy modify: get Points
-        Point getPoint(const Point &p1, const Point &p2, double a);
+        static Point getPoint(const Point &p1, const Point &p2, double a);
 
     public:
-        bool loadFromJson(std::string jsonFileName);
+        bool loadFromJson(const std::string& jsonFileName);
 
         rapidjson::Value convertToJson(rapidjson::Document::AllocatorType &allocator);
 

@@ -18,14 +18,14 @@ namespace SEUTraffic
         std::string result;
         for (const Vehicle* vehicle: getRunningVehicles()) {
             Point pos = vehicle->getPoint();
-            Point dir = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
+            Point direction = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
 
             // wyy: 不变道不需要
             // int lc = vehicle->lastLaneChangeDirection();
             result.append(
-                    double2string(pos.x) + " " + double2string(pos.y) + " " + double2string(atan2(dir.y, dir.x)) + " "
-                            + vehicle->getId() + " " + double2string(vehicle->getLen()) + " "
-                            + double2string(vehicle->getWidth()) + ",");
+                    double2string(pos.x) + " " + double2string(pos.y) + " " + double2string(atan2(direction.y, direction.x)) + " "
+                    + vehicle->getId() + " " + double2string(vehicle->getLen()) + " "
+                    + double2string(vehicle->getWidth()) + ",");
         }
         result.append(";");
 
@@ -193,19 +193,16 @@ namespace SEUTraffic
                     roads.push_back(road);
                     path.pop_back();
                 }
-                Router router(roads, inters);
+                auto router = std::make_shared<const Router>(roads, inters);
 
                 const auto &vehicle = getJsonMemberObject("vehicle", flow);
-                double len = getJsonMember<double>("length", vehicle);
-                double width = getJsonMember<double>("width", vehicle);
-
-                Road* firstRoad = roads[0];
-                double startTime = getJsonMember<double>("startTime", flow, 0);
-                double endTime = getJsonMember<double>("endTime", flow, -1);
-
+                auto len = getJsonMember<double>("length", vehicle);
+                auto width = getJsonMember<double>("width", vehicle);
+                auto startTime = getJsonMember<int>("startTime", flow, 0);
+                auto endTime = getJsonMember<int>("endTime", flow, -1);
                 VehicleInfo vehicleInfo(len, width, router);
                 Flow newFlow(vehicleInfo, getJsonMember<double>("interval", flow), this, startTime, endTime,
-                            std::to_string(i));
+                            "flow_"+std::to_string(i));
                 flows.push_back(newFlow);
                 path.pop_back();
             }
@@ -245,6 +242,7 @@ namespace SEUTraffic
         updateLocationFlag = false;
         // wyy Q: Why sort?
         std::sort(pushBuffer.begin(), pushBuffer.end(), vehicleCmp);
+
         for (auto& vehiclePair : pushBuffer) {
             Vehicle* vehicle = vehiclePair.first;
             // std::cerr << "the " << index << "th car " << std::endl;
@@ -422,7 +420,7 @@ namespace SEUTraffic
             threadGetAction(vehicles);
             threadUpdateLocation(drivables);
             threadUpdateAction(vehicles);
-            threadupdateLeaderAndGap(drivables);
+            threadUpdateLeaderAndGap(drivables);
         }
     }
 
@@ -517,7 +515,7 @@ namespace SEUTraffic
                 if (vehicle->getStartTime() >= currentTime && vehicle->getStartTime() < currentTime + interval) { // start time
                     runningTime = interval - (vehicle->getStartTime() - currentTime); // 这里注意一个问题就是运行时间应该只会是1
                 } else {
-                    runningTime = interval; // 默认的interval为10s
+                    runningTime = interval; // 默认的interval为1s
                 }
                 double deltaDist = 0;
                 deltaDist = runningTime * vehicle->getSpeed();
@@ -576,7 +574,7 @@ namespace SEUTraffic
     }
 
     // wyy: function_对每辆车更新leader和gap
-    void Engine::threadupdateLeaderAndGap(const std::vector<Drivable *> &drivables)
+    void Engine::threadUpdateLeaderAndGap(const std::vector<Drivable *> &drivables)
     {
         startBarrier.wait();
         for (Drivable* drivable : drivables) {
