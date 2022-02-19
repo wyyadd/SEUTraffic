@@ -27,10 +27,6 @@ namespace SEUTraffic{
         friend class Router;
 
     private:
-        std::string id;
-        int startTime;
-        size_t priority;
-
         struct Buffer {
             bool isDisSet = false;
             bool isDrivableSet = false;
@@ -59,24 +55,27 @@ namespace SEUTraffic{
 
         VehicleInfo vehicleInfo;
 
-        bool stopped;
+        std::string id;
+
+        int startTime;
 
         double endTime;
+
+        size_t priority;
+
+        bool stopped;
 
         double totalDist = 0; // record for avg speed compute
 
         double enterTime;
 
+        // wyy modify
+        int currentDrivableIndex = 0;
+
         Flow *flow;
 
     public:
-        Vehicle(std::string  id, VehicleInfo& vehicleInfo, int startTime, Engine *engine);
-        
         Vehicle(const VehicleInfo &init, std::string id, Engine *engine, Flow *flow = nullptr);
-
-        Vehicle(const Vehicle &vehicle, std::string id, Engine *engine, Flow *flow = nullptr);
-
-//        void setSpeed(double speed);
 
         void setDis(double dis){
             buffer.dis = dis;
@@ -106,28 +105,24 @@ namespace SEUTraffic{
 
         std::string getId() const { return id; }
 
-        double gettotalDist() const { return totalDist; }
-
         Drivable* getCurDrivable() const;
 
         void setLeader(Vehicle* leaderCar); // 设置leader
 
         Drivable* getNextDrivable();
 
-        Drivable* getNextDrivable() const ;
-
         Intersection* getNextIntersection();
 
-        Vehicle* getLeader()
+        Vehicle* getLeader() const
         {
             return controllerInfo.leader;
         }
 
-        bool hasSetEnd() { return buffer.isEndSet; }
+        bool hasSetEnd() const { return buffer.isEndSet; }
 
         bool hasSetDrivable() const { return buffer.isDrivableSet; }
 
-        Drivable* getChangedDrivable()
+        Drivable* getChangedDrivable() const
         {
             if (!buffer.isDrivableSet) {
                 return nullptr;
@@ -135,9 +130,9 @@ namespace SEUTraffic{
             else return buffer.drivable;
         }
 
-        double getTotalDist() { return totalDist; }
+        double getTotalDist() const { return totalDist; }
 
-        int getPriority() { return priority; }
+        size_t getPriority() const { return priority; }
 
         void setEnd(bool end)
         {
@@ -145,42 +140,39 @@ namespace SEUTraffic{
             buffer.isEndSet = true;
         }
 
-        void setPriority(int priority) { this->priority = priority; }
+        void setPriority(size_t pri) { this->priority = pri; }
 
         void setStop(bool stop)
         {
             stopped = stop;
         }
 
-        void setEndTime(double endtime)
+        void setEndTime(double newEndTime)
         {
-            endTime = endtime;
+            this->endTime = newEndTime;
         }
 
-        double gettotalDist()
-        {
-            return totalDist;
-        }
 
         void updateTotalDist(double dist) { totalDist = dist; }
 
-        double getEndTime()
+        double getEndTime() const
         {
             return endTime;
         }
 
-        void setDrivable(Drivable* lane)
+        void setDrivable(Drivable* drivable)
         {
-            buffer.drivable = lane;
+            buffer.drivable = drivable;
             buffer.isDrivableSet = true;
+            ++currentDrivableIndex;
         }
 
-        bool hasSetStop()
+        bool hasSetStop() const
         {
             return stopped;
         }
 
-        bool isStoped() const
+        bool isStopped() const
         {
             return stopped;
         }

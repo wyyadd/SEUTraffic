@@ -170,6 +170,7 @@ namespace SEUTraffic{
         double length;
         double width;
         double maxSpeed;
+        // TODO: vehicle只进不出， 会造成内存溢出
         std::list<Vehicle *> vehicles;
         DrivableType drivableType;
         // wyy modify: add points
@@ -228,7 +229,7 @@ namespace SEUTraffic{
     private:
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
-        std::deque<Vehicle *> waitingBuffer; // TODO
+//        std::deque<Vehicle *> waitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
 
     public:
@@ -256,6 +257,8 @@ namespace SEUTraffic{
             return belongRoad->endIntersection;
         }
 
+        std::vector<LaneLink *> getLaneLinksToRoad(const Road *road) const;
+
         void reset();
 
         //yzh:add fellow function
@@ -265,13 +268,13 @@ namespace SEUTraffic{
         std::vector<LaneLink *> &getLaneLinks() { return this->laneLinks; }
 
         /* waiting buffer */
-        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
+//        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
 
-        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
+//        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
 
-        void pushWaitingVehicle(Vehicle *vehicle) {
-            waitingBuffer.emplace_back(vehicle);
-        }
+//        void pushWaitingVehicle(Vehicle *vehicle) {
+//            waitingBuffer.emplace_back(vehicle);
+//        }
     };
 
     class LaneLink : public Drivable {
@@ -291,9 +294,9 @@ namespace SEUTraffic{
             return (startLane ? startLane->getId() : "") + "_TO_" + (endLane ? endLane->getId() : "");
         }
 
-        Lane *getstartLane() const { return startLane; }
+        Lane *getStartLane() const { return startLane; }
 
-        Lane* getendLane() const { return endLane; }
+        Lane* getEndLane() const { return endLane; }
 
         // wyy modify: lanelink avaliable
         // yzh：laneLink可用 与 roadLink可用 等价？？？

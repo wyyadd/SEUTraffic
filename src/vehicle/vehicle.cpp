@@ -10,28 +10,14 @@
 namespace SEUTraffic
 {
 
-    Vehicle::Vehicle (std::string id, VehicleInfo &vehicleInfo, int startTime, Engine *engine)
-        :id(std::move(id)), startTime(startTime) , engine(engine), vehicleInfo(vehicleInfo){
-        controllerInfo.dis = 0;
-        controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
-        controllerInfo.running = true;
-    };
-
     Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
-        : id(std::move(id)),engine(engine), vehicleInfo(vehicleInfo),flow(flow){
+        : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
         controllerInfo.dis = 0;
         controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
 
         while (engine->checkPriority(priority = engine->rnd()));
         enterTime = engine->getCurrentTime();
-    }
-
-    Vehicle::Vehicle(const Vehicle &vehicle, std::string id, Engine *engine, Flow *flow)
-        : vehicleInfo(vehicle.vehicleInfo), controllerInfo(vehicle.controllerInfo),
-         buffer(vehicle.buffer), id(std::move(id)), engine(engine),flow(flow){
-        while (engine->checkPriority(priority = engine->rnd()));
-        enterTime = vehicle.enterTime;
     }
 
     Drivable* Vehicle::getCurDrivable() const
@@ -41,12 +27,7 @@ namespace SEUTraffic
 
     Drivable* Vehicle::getNextDrivable()
     {
-        return vehicleInfo.getRouter().getNextDrivable(1);
-    }
-
-    Drivable* Vehicle::getNextDrivable() const
-    {
-        return vehicleInfo.getRouter().getNextDrivable(1);
+        return vehicleInfo.getRouter().getNextDrivable(currentDrivableIndex+1);
     }
 
     Intersection* Vehicle::getNextIntersection()
@@ -56,13 +37,11 @@ namespace SEUTraffic
 
     void Vehicle::setLeader(Vehicle* leaderCar)
     {
-
         // 设置leader
         controllerInfo.leader = leaderCar;
         if (leaderCar == nullptr) {
             controllerInfo.gap = 0;
         } else {
-            // wyy Q: if not equal, laneLink?
             if (leaderCar->getCurDrivable()->getId() == getCurDrivable()->getId())
                 controllerInfo.gap = leaderCar->getDistance() - getDistance() - leaderCar->getLen();
             else {
@@ -73,10 +52,9 @@ namespace SEUTraffic
 
     void Vehicle::update()
     {
-        // wyy Q: what does this set mean?
         if (buffer.isEndSet) {
             controllerInfo.end = buffer.end;
-            if (buffer.end== true)
+            if (buffer.end)
                 controllerInfo.running = false;
             else controllerInfo.running = true;
             buffer.isEndSet = false;
@@ -92,7 +70,7 @@ namespace SEUTraffic
         {
             controllerInfo.drivable = buffer.drivable;
             buffer.isDrivableSet = false;
-            vehicleInfo.getRouter().update(controllerInfo.drivable);
+//            vehicleInfo.getRouter().update(controllerInfo.drivable);
         }
     }
 

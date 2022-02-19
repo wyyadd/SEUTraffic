@@ -258,7 +258,6 @@ namespace SEUTraffic{
                                 laneLink.points.emplace_back(p6.x, p6.y);
                             }
                         }
-                        laneLink.initLength();
                         // wyy end modify
                        
                         laneLink.roadLink = &roadLink;
@@ -523,6 +522,15 @@ namespace SEUTraffic{
         }
     }
 
+    std::vector<LaneLink *> Lane::getLaneLinksToRoad(const Road *road) const {
+        std::vector<LaneLink *> ret;
+        for (auto &laneLink : laneLinks) {
+            if (laneLink->getEndLane()->getBelongRoad() == road)
+                ret.push_back(laneLink);
+        }
+        return ret;
+    }
+
     // wyy modify: add getPointsByDistance and getDir
     Point Drivable::getPointByDistance(double dis) const {
         return SEUTraffic::getPointByDistance(points, dis);
@@ -645,7 +653,7 @@ namespace SEUTraffic{
     //yzh:清空vehicles和waitingBuffer中的车辆
     void Lane::reset()
     {
-        waitingBuffer.clear();
+//        waitingBuffer.clear();
         vehicles.clear();
     }
 
@@ -693,8 +701,8 @@ namespace SEUTraffic{
             for (RoadLink rlink : roadLinks) { // 这里的逻辑写错了
                 if (roadLinkAvailable[rlink.getIndex()]) {
                     for (auto& lanelink : rlink.getLaneLinks()) {
-                        Lane* stlane = lanelink.getstartLane();
-                        Lane* edlane = lanelink.getendLane();
+                        Lane* stlane = lanelink.getStartLane();
+                        Lane* edlane = lanelink.getEndLane();
                         startLanes.insert(stlane);
                         endLanes.insert(edlane);
                     }

@@ -253,13 +253,13 @@ namespace SEUTraffic
             Drivable* nextLane = vehicle->getNextDrivable();
             Intersection* nextInter = vehicle->getNextIntersection();
             Vehicle* leader = vehicle->getLeader();
-            Road* curRoad = curLane->getBelongRoad(); // TODO: not sure whether problem here.
+//            Road* curRoad = curLane->getBelongRoad(); // TODO: not sure whether problem here.
 
             if (nextLane == nullptr) { //这里的分支可能有些冗余，我分为了下一条道路是终点和不是终点的情况
                 if (maxPosblDist > curLane->getLength()) {
                     if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
                         // wyy Q: what is setEnd
-                        double oldDist = vehicle->gettotalDist();
+                        double oldDist = vehicle->getTotalDist();
                         vehicle->updateTotalDist(oldDist - vehicle->getDistance() + curLane->getLength());
                         vehicle->setEnd(true);
                         vehicle->setStop(false);
@@ -604,7 +604,7 @@ namespace SEUTraffic
         ret.reserve(vehicleActiveCount);
         for (const auto& vehiclePair : vehiclePool) {
             const Vehicle* vehicle = vehiclePair.second.first;
-            if ((vehicle->isStoped() && includeWaiting) || vehicle->isRunning()) {
+            if ((vehicle->isStopped() && includeWaiting) || vehicle->isRunning()) {
                 ret.emplace_back(vehicle);
             }
         }
@@ -636,7 +636,7 @@ namespace SEUTraffic
         for (const Lane* lane : roadNet.getLanes()) {
             int cnt = 0;
             for (Vehicle* vehicle : lane->getVehicles()) {
-                if (vehicle->isStoped()) {
+                if (vehicle->isStopped()) {
                     cnt++;
                 }
             }

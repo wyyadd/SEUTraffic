@@ -7,6 +7,6 @@
 namespace SEUTraffic
 {
     Road *VehicleInfo::getFirstRoad() const {
-        return router.getFirstRoad();
+        return router->getFirstRoad();
     }
 }

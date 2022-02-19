@@ -20,27 +20,36 @@ namespace SEUTraffic{
     private:
         std::vector<Road *> route;
         std::vector<Intersection *> inters;
-        // TODO 增加lanelink, change to drivable
-        std::vector<Lane*> planned;
+        std::vector<Drivable*> planned;
         std::vector<Road *> followingRoads;
     public:
         Router(std::vector<Road *> roads, std::vector<Intersection *> inters);
 
         void initRoutePlan();
 
-        Lane* getNextLane(int i); // 初始化路线获得经过的lane
+        static size_t selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) ;
 
-        Lane* getNextDrivable(int i); // 在后续的运行中使用，注意不要和上面的混用
+        static Lane *selectLane(const Lane *curLane, const std::vector<Lane *> &lanes) ;
+
+        static LaneLink *selectLaneLink(const Lane *curLane, const std::vector<LaneLink*> &laneLinks) ;
+
+        Drivable *getFirstDrivable() const;
+
+        Drivable* initNextDrivable(int i, int curRoadIndex); // 初始化路线获得经过的lane
+
+        Drivable* initNextDrivable(const Drivable *curDrivable, int curRoadIndex) const;
+
+        Drivable* getNextDrivable(int i); // 在后续的运行中使用，注意不要和上面的混用
 
         Road* getFirstRoad() const;
 
-        std::vector<Lane*> getPlanned() { return planned; }
+        std::vector<Drivable*> getPlanned() { return planned; }
 
-        Lane* getFirstDrivable() { return planned[0]; }
+        Drivable* getFirstDrivable() { return planned[0]; }
 
         Intersection* getNextInter(); //
 
-        void update(Drivable* drivable);
+//        void update(Drivable* drivable);
 
         std::vector<Road*> getFollowingRoads() const
         {
