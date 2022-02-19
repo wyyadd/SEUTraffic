@@ -16,7 +16,7 @@ namespace SEUTraffic{
             return a.second > b.second;
         }
 
-        std::map<int, std::pair<Vehicle *, int>> vehiclePool;
+        std::map<size_t, std::pair<Vehicle *, int>> vehiclePool;
         std::map<std::string, Vehicle *> vehicleMap;
         std::vector<std::set<Vehicle *>> threadVehiclePool;
         std::vector<std::vector<Road *>> threadRoadPool;
@@ -91,7 +91,7 @@ namespace SEUTraffic{
 
         void step(int interval, std::map<std::string, int>& actions);
 
-        bool checkPriority(int priority);
+        bool checkPriority(size_t priority);
 
         void pushVehicle(Vehicle *const vehicle, bool pushToDrivable = true);
 

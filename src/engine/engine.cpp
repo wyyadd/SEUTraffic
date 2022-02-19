@@ -447,7 +447,7 @@ namespace SEUTraffic
     void Engine::nextStep()
     {
         for (auto& flow : flows) {
-            flow.nextStep(1);
+            flow.nextStep(interval);
         }
         //std::cerr << "now cars in engine are " << totalVehicleCnt << " cur time = " << currentTime <<std::endl;
         getAction();
@@ -461,7 +461,7 @@ namespace SEUTraffic
         updateLog();
     }
 
-    bool Engine::checkPriority(int priority)
+    bool Engine::checkPriority(size_t priority)
     {
         return vehiclePool.find(priority) != vehiclePool.end();
     }
@@ -473,28 +473,14 @@ namespace SEUTraffic
         vehicleMap.emplace(vehicle->getId(), vehicle);
         threadVehiclePool[threadIndex].insert(vehicle);
 
-        if (pushToDrivable)
-            ((Lane *) vehicle->getCurDrivable())->pushWaitingVehicle(vehicle);
+         auto leader = vehicle->getCurDrivable()->getLastVehicle();
+         vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
+         vehicle->setLeader(leader);
+         vehicleActiveCount++;
+         totalVehicleCnt++;
+//        if (pushToDrivable)
+//            ((Lane *) vehicle->getCurDrivable())->pushWaitingVehicle(vehicle);
     }
-    
-    // void Engine::pushVehicle(Vehicle *vehicle)
-    // {
-    //     size_t threadIndex = rnd() % threadNum;
-    //     vehiclePool.emplace(vehicle->getPriority(), std::make_pair(vehicle, threadIndex)); // 加入车流
-    //     if (vehicleMap.count(vehicle->getId())) {
-    //         std::cerr<<"repeat insert existed vehicle"<<std::endl;
-    //         throw "repeat insert existed vehicle";
-    //     }
-
-    //     vehicleMap.emplace(vehicle->getId(), vehicle);
-    //     threadVehiclePool[threadIndex].insert(vehicle);
-    //     Vehicle *leader = vehicle->getCurDrivable()->getLastVehicle();
-    //     vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
-    //     vehicle->setLeader(leader);
-
-    //     vehicleActiveCount++;
-    //     totalVehicleCnt++;
-    // }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
     void Engine::threadGetAction(std::set<Vehicle *> &vehicles)
@@ -504,13 +490,12 @@ namespace SEUTraffic
         for (auto vehicle : vehicles) {
             // wyy:这里curlan和belongRoad有什么用
             Drivable* curLane = vehicle->getCurDrivable();
-            if (curLane == 0x00 || curLane == nullptr) {
+            if (curLane == nullptr) {
                 std::cerr<<vehicle->getId()<<std::endl;
             }
-            Road* belongRoad = curLane->getBelongRoad();
+//            Road* belongRoad = curLane->getBelongRoad();
 
             if (vehicle->isRunning()) {
-                double speed = vehicle->getSpeed();
                 double runningTime;
                 if (vehicle->getStartTime() >= currentTime && vehicle->getStartTime() < currentTime + interval) { // start time
                     runningTime = interval - (vehicle->getStartTime() - currentTime); // 这里注意一个问题就是运行时间应该只会是1

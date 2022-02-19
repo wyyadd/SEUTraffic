@@ -10,12 +10,8 @@ namespace SEUTraffic {
         if (currentTime >= startTime) {
             //yzh:当nowTime大于车辆流的产生间隔，产生新的车辆
             while (nowTime >= interval) {
-                Vehicle* vehicle = new Vehicle(vehicleTemplate, id + "_" + std::to_string(cnt++), engine, this);
+                auto vehicle = new Vehicle(vehicleTemplate, id + "_" + std::to_string(cnt++), engine, this);
                 //yzh:确保vehicle的priority唯一
-                // wyy corr: no need
-                int priority = vehicle->getPriority();
-                while (engine->checkPriority(priority)) priority = engine->rnd();
-                vehicle->setPriority(priority);
                 //yzh:将vehicle放进VehiclePool、VehicleMap、threadVehiclePool
                 engine->pushVehicle(vehicle, false);
                 //yzh:将vehicle放入FirstRoad的planRouteBuffer中

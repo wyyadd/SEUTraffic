@@ -5,19 +5,20 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <utility>
 
 namespace SEUTraffic
 {
 
-    Vehicle::Vehicle (const std::string &id, VehicleInfo &vehicleInfo, int startTime, Engine *engine)
-        :id(id), vehicleInfo(vehicleInfo) , startTime(startTime), engine(engine){
+    Vehicle::Vehicle (std::string id, VehicleInfo &vehicleInfo, int startTime, Engine *engine)
+        :id(std::move(id)), startTime(startTime) , engine(engine), vehicleInfo(vehicleInfo){
         controllerInfo.dis = 0;
         controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
     };
 
-    Vehicle::Vehicle(const VehicleInfo &vehicleInfo, const std::string &id, Engine *engine, Flow *flow)
-        : vehicleInfo(vehicleInfo),id(id), engine(engine),flow(flow){
+    Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
+        : id(std::move(id)),engine(engine), vehicleInfo(vehicleInfo),flow(flow){
         controllerInfo.dis = 0;
         controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
@@ -26,9 +27,9 @@ namespace SEUTraffic
         enterTime = engine->getCurrentTime();
     }
 
-    Vehicle::Vehicle(const Vehicle &vehicle, const std::string &id, Engine *engine, Flow *flow)
+    Vehicle::Vehicle(const Vehicle &vehicle, std::string id, Engine *engine, Flow *flow)
         : vehicleInfo(vehicle.vehicleInfo), controllerInfo(vehicle.controllerInfo),
-         buffer(vehicle.buffer), id(id), engine(engine),flow(flow){
+         buffer(vehicle.buffer), id(std::move(id)), engine(engine),flow(flow){
         while (engine->checkPriority(priority = engine->rnd()));
         enterTime = vehicle.enterTime;
     }

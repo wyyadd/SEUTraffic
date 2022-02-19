@@ -29,7 +29,7 @@ namespace SEUTraffic{
     private:
         std::string id;
         int startTime;
-        int priority;
+        size_t priority;
 
         struct Buffer {
             bool isDisSet = false;
@@ -66,16 +66,17 @@ namespace SEUTraffic{
         double totalDist = 0; // record for avg speed compute
 
         double enterTime;
+
         Flow *flow;
 
     public:
-        Vehicle(const std::string& id, VehicleInfo& vehicleInfo, int startTime, Engine *engine);
+        Vehicle(std::string  id, VehicleInfo& vehicleInfo, int startTime, Engine *engine);
         
-        Vehicle(const VehicleInfo &init, const std::string &id, Engine *engine, Flow *flow = nullptr);
+        Vehicle(const VehicleInfo &init, std::string id, Engine *engine, Flow *flow = nullptr);
 
-        Vehicle(const Vehicle &vehicle, const std::string &id, Engine *engine, Flow *flow = nullptr);
+        Vehicle(const Vehicle &vehicle, std::string id, Engine *engine, Flow *flow = nullptr);
 
-        void setSpeed(double speed);
+//        void setSpeed(double speed);
 
         void setDis(double dis){
             buffer.dis = dis;
