@@ -23,7 +23,7 @@ namespace SEUTraffic{
         std::vector<std::vector<Intersection *>> threadIntersectionPool;
         std::vector<std::vector<Drivable *>> threadDrivablePool;
         std::vector<Flow> flows;
-        RoadNet roadnet;
+        RoadNet roadNet;
         int threadNum;
         double interval;
         std::vector<std::pair<Vehicle*, double>> pushBuffer;
@@ -124,12 +124,12 @@ namespace SEUTraffic{
 
         RoadNet getRoadnet()
         {
-            return roadnet;
+            return roadNet;
         }
 
         std::vector<std::string> getInterIds()
         {
-            return roadnet.getInterIds();
+            return roadNet.getInterIds();
         }
 
         size_t getVehicleCount() const;

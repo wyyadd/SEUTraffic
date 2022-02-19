@@ -40,11 +40,11 @@ namespace SEUTraffic{
         return {(p2.x - p1.x) * a + p1.x, (p2.y - p1.y) * a + p1.y};
     }
 
-    //yzh: read roadnet.json文件
+    //yzh: read roadNet.json文件
     bool RoadNet::loadFromJson(const std::string& jsonFileName){
         rapidjson::Document document;
         if (!readJsonFromFile(jsonFileName, document)){
-            std::cerr << "cannot open roadnet file" << std::endl;
+            std::cerr << "cannot open roadNet file" << std::endl;
             return false;
         }
         /**
@@ -52,7 +52,7 @@ namespace SEUTraffic{
          */
         std::list<std::string> path;
         if (!document.IsObject())
-            throw JsonTypeError("roadnet config file", "object");
+            throw JsonTypeError("roadNet config file", "object");
         try{
             const rapidjson::Value &interValues = getJsonMemberArray("intersections", document);
             const rapidjson::Value &roadValues = getJsonMemberArray("route", document);
@@ -314,7 +314,7 @@ namespace SEUTraffic{
             path.pop_back();
             assert(path.empty());
         }catch(const JsonFormatError &e){
-            std::cerr << "Error occured when reading the roadnet file: " << std::endl;
+            std::cerr << "Error occured when reading the roadNet file: " << std::endl;
             for (const auto &node : path){
                 std::cerr << "/" << node;
             }
@@ -534,10 +534,12 @@ namespace SEUTraffic{
         for (int i = 0; i + 1 < (int) points.size(); i++) {
             double len = (points[i + 1] - points[i]).len();
             if (remain < len)
+                // 距离dis最近两点的单位向量
                 return (points[i + 1] - points[i]).unit();
             else
                 remain -= len;
         }
+        // 最后两点的单位向量
         return (points[points.size() - 1] - points[points.size() - 2]).unit();
     }
 

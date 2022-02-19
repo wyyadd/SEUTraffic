@@ -20,8 +20,7 @@ namespace SEUTraffic
             Point pos = vehicle->getPoint();
             Point direction = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
 
-            // wyy: 不变道不需要
-            // int lc = vehicle->lastLaneChangeDirection();
+            // 依次： x y 方位角 ID length width
             result.append(
                     double2string(pos.x) + " " + double2string(pos.y) + " " + double2string(atan2(direction.y, direction.x)) + " "
                     + vehicle->getId() + " " + double2string(vehicle->getLen()) + " "
@@ -29,7 +28,9 @@ namespace SEUTraffic
         }
         result.append(";");
 
-        for (Road &road : roadnet.getRoads()) {
+        // 什么用处, 我看了Replay.txt, 每条数据的这部分都是一样的
+        // format: for every road, check every laneLink is "lightPhase available" in road's endIntersection
+        for (Road &road : roadNet.getRoads()) {
             if (road.getEndIntersection()->isVirtualIntersection())
                 continue;
             result.append(road.getId());
@@ -53,7 +54,7 @@ namespace SEUTraffic
         logOut << result << std::endl;
     }
 
-    Engine::Engine(const std::string &configFile, int threadNum) :  threadNum(threadNum), startBarrier(threadNum + 1),
+    Engine::Engine(const std::string &configFile, int threadNum) : threadNum(threadNum), startBarrier(threadNum + 1),
                                                                       endBarrier(threadNum +1){
         for (int i = 0; i < threadNum ; i++){
             threadVehiclePool.emplace_back();
@@ -93,7 +94,7 @@ namespace SEUTraffic
     // wyy modify: setLogFile
     void Engine::setLogFile(const std::string &jsonFile, const std::string &logFile) {
         if (!writeJsonToFile(jsonFile, jsonRoot)) {
-            std::cerr << "write roadnet log file error" << std::endl;
+            std::cerr << "write roadNet log file error" << std::endl;
         }
         logOut.open(logFile);
     }
@@ -121,7 +122,7 @@ namespace SEUTraffic
             std::string flowFile = getJsonMember<const char*>("flowFile", document);
 
             if(!loadRoadNet(dir + roadnetFile)){
-                std::cerr << "loading  roadnet file error!" << std::endl;
+                std::cerr << "loading  roadNet file error!" << std::endl;
             }
 
             if (!loadFlow(dir + flowFile)){
@@ -139,24 +140,24 @@ namespace SEUTraffic
     }
 
     bool Engine::loadRoadNet(const std::string &jsonFile){
-        bool ans = roadnet.loadFromJson(jsonFile);
+        bool ans = roadNet.loadFromJson(jsonFile);
         int cnt = 0;
 
-        for (Road &road : roadnet.getRoads()){
+        for (Road &road : roadNet.getRoads()){
             threadRoadPool[cnt].push_back(&road);
             cnt = (cnt +1) % threadNum;
         }
-        for (Intersection &intersection : roadnet.getIntersections()){
+        for (Intersection &intersection : roadNet.getIntersections()){
             threadIntersectionPool[cnt].push_back(&intersection);
             cnt = (cnt + 1) % threadNum;
         }
-        for (Drivable *drivable : roadnet.getDrivables()){
+        for (Drivable *drivable : roadNet.getDrivables()){
             threadDrivablePool[cnt].push_back(drivable);
             cnt = (cnt +1) % threadNum;
         }
         // wyy modify: log replay_roadnet json
         jsonRoot.SetObject();
-        jsonRoot.AddMember("static", roadnet.convertToJson(jsonRoot.GetAllocator()), jsonRoot.GetAllocator());
+        jsonRoot.AddMember("static", roadNet.convertToJson(jsonRoot.GetAllocator()), jsonRoot.GetAllocator());
         return ans;
     }
 
@@ -184,7 +185,7 @@ namespace SEUTraffic
                         throw JsonTypeError("route", "string");
                     }
                     std::string roadName = route.GetString();
-                    auto road = roadnet.getRoadById(roadName);
+                    auto road = roadNet.getRoadById(roadName);
                     if (!road)
                         throw JsonFormatError(
                             "No such road: " + roadName);
@@ -426,7 +427,7 @@ namespace SEUTraffic
 
     void Engine::step(int interval, std::map<std::string, int> &actions)
     {
-        for (auto inter : roadnet.getIntersections()) {
+        for (auto inter : roadNet.getIntersections()) {
             std::string interId = inter.getId();
             int phase = actions[interId];
             inter.getTrafficLight().setPhase(phase);
@@ -589,7 +590,7 @@ namespace SEUTraffic
 
     void Engine::setTrafficLightPhase(std::string id, int phaseIndex )
     {
-        roadnet.getIntersectionById(id)->getTrafficLight().setPhase(phaseIndex);
+        roadNet.getIntersectionById(id)->getTrafficLight().setPhase(phaseIndex);
     }
 
     size_t Engine::getVehicleCount() const
@@ -623,7 +624,7 @@ namespace SEUTraffic
     std::map<std::string, int> Engine::getLaneVehicleCount() const
     {
         std::map<std::string, int> ret;
-        for (const Lane* lane : roadnet.getLanes()) {
+        for (const Lane* lane : roadNet.getLanes()) {
             ret.emplace(lane->getId(), lane->getVehicleCnt());
         }
         return ret;
@@ -632,7 +633,7 @@ namespace SEUTraffic
     std::map<std::string, int> Engine::getLaneWaitingVehicleCount() const
     {
         std::map<std::string, int> ret;
-        for (const Lane* lane : roadnet.getLanes()) {
+        for (const Lane* lane : roadNet.getLanes()) {
             int cnt = 0;
             for (Vehicle* vehicle : lane->getVehicles()) {
                 if (vehicle->isStoped()) {
@@ -647,7 +648,7 @@ namespace SEUTraffic
     std::map<std::string, std::vector<std::string>> Engine::getLaneVehicles()
     {
         std::map<std::string, std::vector<std::string>> ret;
-        for (const Lane *lane : roadnet.getLanes())
+        for (const Lane *lane : roadNet.getLanes())
         {
             std::vector<std::string> vehicles;
             for (Vehicle *vehicle : lane->getVehicles())
@@ -719,7 +720,7 @@ namespace SEUTraffic
         }
         vehiclePool.clear();
         vehicleMap.clear();
-        roadnet.reset();
+        roadNet.reset();
 
         finishedVehicleCnt = 0;
         cumulativeTravelTime = 0;

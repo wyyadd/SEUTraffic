@@ -116,6 +116,49 @@ namespace SEUTraffic{
         double averageLength() const;
     };
 
+    enum RoadLinkType{
+        go_straight = 3, turn_left = 2, turn_right = 1
+    };
+
+    class RoadLink {
+        friend class RoadNet;
+
+        friend class LaneLink;
+
+    private:
+        Intersection *intersection = nullptr;
+        Road *startRoad = nullptr;
+        Road *endRoad = nullptr;
+        RoadLinkType type;
+        std::vector<LaneLink> laneLinks;
+        std::vector<LaneLink *> laneLinkPointers;
+        int index;
+    public:
+        const std::vector<LaneLink> &getLaneLinks() const {return this->laneLinks; }
+
+        std::vector<LaneLink> &getLaneLinks() { return this->laneLinks; }
+
+        std::vector<LaneLink *> &getLaneLinkPointers();
+
+        Road *getStartRoad() const {return this->startRoad; }
+
+        Road *getEndRoad() const { return this->endRoad; }
+
+        bool isAvailable() const
+        {
+            return this->intersection->trafficLight.getCurrentPhase().roadLinkAvailable[this->index];
+        }
+
+        bool isTurn() const {
+            return this-> type == turn_left || type == turn_right;
+        }
+
+        void reset();
+
+        int getIndex() { return index; }
+
+    };
+
     class Drivable{
         friend class RoadNet;
     public:
@@ -231,49 +274,6 @@ namespace SEUTraffic{
         }
     };
 
-    enum RoadLinkType{
-        go_straight = 3, turn_left = 2, turn_right = 1
-    };
-
-    class RoadLink {
-        friend class RoadNet;
-
-        friend class LaneLink;
-
-    private:
-        Intersection *intersection = nullptr;
-        Road *startRoad = nullptr;
-        Road *endRoad = nullptr;
-        RoadLinkType type;
-        std::vector<LaneLink> laneLinks;
-        std::vector<LaneLink *> laneLinkPointers;
-        int index;
-    public:
-        const std::vector<LaneLink> &getLaneLinks() const {return this->laneLinks; }
-
-        std::vector<LaneLink> &getLaneLinks() { return this->laneLinks; }
-
-        std::vector<LaneLink *> &getLaneLinkPointers();
-
-        Road *getStartRoad() const {return this->startRoad; }
-
-        Road *getEndRoad() const { return this->endRoad; }
-
-        bool isAvailable() const
-        {
-            return this->intersection->trafficLight.getCurrentPhase().roadLinkAvailable[this->index];
-        }
-
-        bool isTurn() const {
-            return this-> type == turn_left || type == turn_right;
-        }
-
-        void reset();
-
-        int getIndex() { return index; }
-
-    };
-
     class LaneLink : public Drivable {
 
         friend class RoadNet;
@@ -313,8 +313,6 @@ namespace SEUTraffic{
         RoadLinkType getRoadLinkType() const { return this->roadLink->type; }
 
         bool isTurn() const { return roadLink->isTurn(); }
-
-        void initLength();
 
     };
 
