@@ -31,7 +31,7 @@ namespace SEUTraffic{
             bool isDisSet = false;
             bool isDrivableSet = false;
             bool isEndSet = false;
-            double deltaDist;
+//            double deltaDist;
             Drivable* drivable;
             double speed;
             bool end = false;
@@ -41,7 +41,7 @@ namespace SEUTraffic{
         struct ControllerInfo{
             double dis = 0;
             Drivable* drivable = nullptr;
-            double gap;
+//            double gap;
             Vehicle *leader = nullptr;
             bool running = false;
             bool end = false;
@@ -59,15 +59,14 @@ namespace SEUTraffic{
 
         int startTime;
 
-        double endTime;
+        double endTime = -1;
 
         size_t priority;
 
-        bool stopped;
+        // TODO: 有什么用
+        bool stopped = false;
 
         double totalDist = 0; // record for avg speed compute
-
-        double enterTime;
 
         // wyy modify
         int currentDrivableIndex = 0;

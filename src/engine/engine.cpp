@@ -6,6 +6,7 @@
 #include <mutex>
 #include <ostream>
 #include <string>
+#include <utility>
 #include "roadnet/roadnet.h"
 #include "engine/engine.h"
 #include "utility/utility.h"
@@ -232,7 +233,7 @@ namespace SEUTraffic {
     void Engine::updateAction() {
         startBarrier.wait();
         endBarrier.wait();
-        vehicleRemoveBuffer.clear();// todo： 可以先不管
+//        vehicleRemoveBuffer.clear();// todo： 可以先不管
     }
 
     // wyy: function_主线程——更新每辆车的dist和变道， 设置结束等信息
@@ -265,11 +266,22 @@ namespace SEUTraffic {
                         vehicle->setStop(false);
                     }
                 } else { // exist next drivable
-                    if(curDrivable->isLane() && !dynamic_cast<const LaneLink*>(curDrivable)->isAvailable()){
+                    if(curDrivable->isLane() && !dynamic_cast<const LaneLink*>(nextDrivable)->isAvailable()){
                         vehicle->setStop(true);
                         continue;
                     }
                     auto next_leader = nextDrivable->getLastVehicle();
+                    // if next drivable has no vehicles
+                    if(next_leader == nullptr || next_leader->hasSetEnd() || next_leader->getChangedDrivable() != nullptr){
+                        if(remainDist >= 0)
+                            vehicle->setDis(maxPossibleDist);
+                        else {
+                            vehicle->setDis(-remainDist);
+                            vehicle->setDrivable(nextDrivable);
+                        }
+                        vehicle->setStop(false);
+                        continue;
+                    }
                     double safe_distance =
                             next_leader->getBufferDist() - next_leader->getMinGap() - next_leader->getLen();
                     if (remainDist >= 0) { // still on this drivable
@@ -442,7 +454,7 @@ namespace SEUTraffic {
 
                 if (vehicle->hasSetEnd()) { // 在这里就删除车辆，不知道会不会有问题 TODO
                     std::lock_guard<std::mutex> guard(lock);
-                    vehicleRemoveBuffer.insert(vehicle);
+//                    vehicleRemoveBuffer.insert(vehicle);
                     vehicleMap.erase(vehicle->getId());
                     auto iter = vehiclePool.find(vehicle->getPriority());
                     threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
@@ -493,7 +505,7 @@ namespace SEUTraffic {
     }
 
     void Engine::setTrafficLightPhase(std::string id, int phaseIndex) {
-        roadNet.getIntersectionById(id)->getTrafficLight().setPhase(phaseIndex);
+        roadNet.getIntersectionById(std::move(id))->getTrafficLight().setPhase(phaseIndex);
     }
 
     size_t Engine::getVehicleCount() const {

@@ -15,9 +15,8 @@ namespace SEUTraffic
         controllerInfo.dis = 0;
         controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
-
         while (engine->checkPriority(priority = engine->rnd()));
-        enterTime = engine->getCurrentTime();
+        startTime = engine->getCurrentTime();
     }
 
     Drivable* Vehicle::getCurDrivable() const
@@ -39,15 +38,15 @@ namespace SEUTraffic
     {
         // 设置leader
         controllerInfo.leader = leaderCar;
-        if (leaderCar == nullptr) {
-            controllerInfo.gap = 0;
-        } else {
-            if (leaderCar->getCurDrivable()->getId() == getCurDrivable()->getId())
-                controllerInfo.gap = leaderCar->getDistance() - getDistance() - leaderCar->getLen();
-            else {
-                controllerInfo.gap = leaderCar->getDistance() + getCurDrivable()->getLength() - getDistance() - leaderCar->getLen();
-            }
-        }
+//        if (leaderCar == nullptr) {
+//            controllerInfo.gap = 0;
+//        } else {
+//            if (leaderCar->getCurDrivable()->getId() == getCurDrivable()->getId())
+//                controllerInfo.gap = leaderCar->getDistance() - getDistance() - leaderCar->getLen();
+//            else {
+//                controllerInfo.gap = leaderCar->getDistance() + getCurDrivable()->getLength() - getDistance() - leaderCar->getLen();
+//            }
+//        }
     }
 
     void Vehicle::update()

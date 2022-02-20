@@ -55,7 +55,7 @@ namespace SEUTraffic{
             throw JsonTypeError("roadNet config file", "object");
         try{
             const rapidjson::Value &interValues = getJsonMemberArray("intersections", document);
-            const rapidjson::Value &roadValues = getJsonMemberArray("route", document);
+            const rapidjson::Value &roadValues = getJsonMemberArray("roads", document);
 
             //build mapping
             roads.resize(roadValues.Size());
@@ -80,8 +80,8 @@ namespace SEUTraffic{
             }
             assert(path.empty());
 
-            // read route
-            path.emplace_back("route");
+            // read road
+            path.emplace_back("roads");
             for (rapidjson::SizeType i = 0; i < roadValues.Size();i++){
                 path.emplace_back(roads[i].getId());
                 const auto &curRoadValue = roadValues[i]; //遍历roadValues
@@ -154,10 +154,10 @@ namespace SEUTraffic{
                 intersections[i].point = Point(x, y);
                 // wyy end modify
 
-                // read route
-                const auto &roadsValue = getJsonMemberArray("route", curInterValue);
+                // read roads
+                const auto &roadsValue = getJsonMemberArray("roads", curInterValue);
                 for (auto &roadNameValue : roadsValue.GetArray()){
-                    path.emplace_back("route[" + std::to_string(intersections[i].roads.size()) + "]");
+                    path.emplace_back("roads[" + std::to_string(intersections[i].roads.size()) + "]");
                     std::string roadName = roadNameValue.GetString();
                     if (!roadMap.count(roadName)){
                         throw JsonFormatError("No such road: " + roadName);
@@ -553,7 +553,10 @@ namespace SEUTraffic{
 
     const std::vector<LaneLink *> &Intersection::getLaneLinks() {
         if (laneLinks.size() > 0) return laneLinks;
-        throw "nothing about lanelink. wrong.";
+        for (auto &roadLink : roadLinks) {
+            auto &roadLaneLinks = roadLink.getLaneLinkPointers();
+            laneLinks.insert(laneLinks.end(), roadLaneLinks.begin(), roadLaneLinks.end());
+        }
         return laneLinks;
     }
 

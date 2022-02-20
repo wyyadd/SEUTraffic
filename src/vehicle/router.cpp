@@ -15,7 +15,7 @@ namespace SEUTraffic{
         for(auto & i : route)
             followingRoads.push_back(i);
         planned.push_back(getFirstDrivable());
-        for (int i = 0; i < 2 * route.size()-1; i++) {
+        for (int i = 0; i < 2 * route.size() - 2; i++) {
             auto drivable = initNextDrivable(i, i/2);
             planned.push_back(drivable);
         }
@@ -39,7 +39,6 @@ namespace SEUTraffic{
 
     Drivable *Router::initNextDrivable(int i, int curRoadIndex){ // 初始化路线获得经过的lane
         Drivable *ret = initNextDrivable(planned[i], curRoadIndex);
-        planned.push_back(ret);
         return ret;
     }
 

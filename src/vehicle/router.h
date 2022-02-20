@@ -45,8 +45,6 @@ namespace SEUTraffic{
 
         std::vector<Drivable*> getPlanned() { return planned; }
 
-        Drivable* getFirstDrivable() { return planned[0]; }
-
         Intersection* getNextInter(); //
 
 //        void update(Drivable* drivable);
