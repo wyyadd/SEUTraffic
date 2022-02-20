@@ -273,7 +273,7 @@ namespace SEUTraffic {
                     auto next_leader = nextDrivable->getLastVehicle();
                     // if next drivable has no vehicles
                     if(next_leader == nullptr || next_leader->hasSetEnd() || next_leader->getChangedDrivable() != nullptr){
-                        if(remainDist >= 0)
+                        if(remainDist > 0)
                             vehicle->setDis(maxPossibleDist);
                         else {
                             vehicle->setDis(-remainDist);
@@ -284,7 +284,7 @@ namespace SEUTraffic {
                     }
                     double safe_distance =
                             next_leader->getBufferDist() - next_leader->getMinGap() - next_leader->getLen();
-                    if (remainDist >= 0) { // still on this drivable
+                    if (remainDist > 0) { // still on this drivable
                         if (safe_distance >= 0 || (remainDist >= -safe_distance)) { // no overlap
                             vehicle->setDis(maxPossibleDist);
                             vehicle->setStop(false);

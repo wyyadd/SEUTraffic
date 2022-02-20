@@ -170,7 +170,6 @@ namespace SEUTraffic{
         double length;
         double width;
         double maxSpeed;
-        // TODO: vehicle只进不出， 会造成内存溢出
         std::list<Vehicle *> vehicles;
         DrivableType drivableType;
         // wyy modify: add points
