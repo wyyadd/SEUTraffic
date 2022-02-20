@@ -11,18 +11,19 @@
 #include "utility/utility.h"
 #include "vehicle/vehicle.h"
 #include "vehicle/vehicleInfo.h"
-namespace SEUTraffic
-{
+
+namespace SEUTraffic {
     // wyy modify: updataLog
     void Engine::updateLog() {
         std::string result;
-        for (const Vehicle* vehicle: getRunningVehicles()) {
+        for (const Vehicle *vehicle: getRunningVehicles()) {
             Point pos = vehicle->getPoint();
             Point direction = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
 
             // 依次： x y 方位角 ID length width
             result.append(
-                    double2string(pos.x) + " " + double2string(pos.y) + " " + double2string(atan2(direction.y, direction.x)) + " "
+                    double2string(pos.x) + " " + double2string(pos.y) + " " +
+                    double2string(atan2(direction.y, direction.x)) + " "
                     + vehicle->getId() + " " + double2string(vehicle->getLen()) + " "
                     + double2string(vehicle->getWidth()) + ",");
         }
@@ -30,18 +31,18 @@ namespace SEUTraffic
 
         // 什么用处, 我看了Replay.txt, 每条数据的这部分都是一样的
         // format: for every road, check every laneLink is "lightPhase available" in road's endIntersection
-        for (Road &road : roadNet.getRoads()) {
+        for (Road &road: roadNet.getRoads()) {
             if (road.getEndIntersection()->isVirtualIntersection())
                 continue;
             result.append(road.getId());
-            for (const Lane &lane : road.getLanes()) {
-                if (lane.getEndIntersection()->isImplicitIntersection()){
+            for (const Lane &lane: road.getLanes()) {
+                if (lane.getEndIntersection()->isImplicitIntersection()) {
                     result.append(" i");
                     continue;
                 }
 
                 bool can_go = true;
-                for (LaneLink *laneLink : lane.getLaneLinks()) {
+                for (LaneLink *laneLink: lane.getLaneLinks()) {
                     if (!laneLink->isAvailable()) {
                         can_go = false;
                         break;
@@ -55,8 +56,8 @@ namespace SEUTraffic
     }
 
     Engine::Engine(const std::string &configFile, int threadNum) : threadNum(threadNum), startBarrier(threadNum + 1),
-                                                                      endBarrier(threadNum +1){
-        for (int i = 0; i < threadNum ; i++){
+                                                                   endBarrier(threadNum + 1) {
+        for (int i = 0; i < threadNum; i++) {
             threadVehiclePool.emplace_back();
             threadRoadPool.emplace_back();
             threadIntersectionPool.emplace_back();
@@ -64,12 +65,12 @@ namespace SEUTraffic
         }
 
         bool success = loadConfig(configFile);
-        if (!success){
+        if (!success) {
             std::cerr << "load config failed" << std::endl;
         }
 
         currentTime = 0;
-        for (int i= 0 ; i < threadNum; i++){
+        for (int i = 0; i < threadNum; i++) {
             threadPool.emplace_back(&Engine::threadController, this,
                                     std::ref(threadVehiclePool[i]),
                                     std::ref(threadRoadPool[i]),
@@ -78,15 +79,14 @@ namespace SEUTraffic
         }
     }
 
-    Engine::~Engine()
-    {
+    Engine::~Engine() {
         // wyy modify: log
         logOut.close();
         finished = true;
-        for (auto& thread : threadPool) {
+        for (auto &thread: threadPool) {
             thread.join();
         }
-        for (auto &vehiclePair : vehiclePool) {
+        for (auto &vehiclePair: vehiclePool) {
             delete vehiclePair.second.first;
         }
     }
@@ -99,14 +99,14 @@ namespace SEUTraffic
         logOut.open(logFile);
     }
 
-    bool Engine::loadConfig(const std::string &configFile){
+    bool Engine::loadConfig(const std::string &configFile) {
         rapidjson::Document document;
-        if (!readJsonFromFile(configFile, document)){
+        if (!readJsonFromFile(configFile, document)) {
             std::cerr << "cannot open config file!" << std::endl;
             return false;
         }
 
-        if (!document.IsObject()){
+        if (!document.IsObject()) {
             std::cerr << "wrong format of config file" << std::endl;
             return false;
         }
@@ -118,42 +118,42 @@ namespace SEUTraffic
             seed = getJsonMember<int>("seed", document);
             rnd.seed(seed);
             dir = getJsonMember<const char *>("dir", document);
-            std::string roadnetFile =getJsonMember<const char*>("roadnetFile", document);
-            std::string flowFile = getJsonMember<const char*>("flowFile", document);
+            std::string roadnetFile = getJsonMember<const char *>("roadnetFile", document);
+            std::string flowFile = getJsonMember<const char *>("flowFile", document);
 
-            if(!loadRoadNet(dir + roadnetFile)){
+            if (!loadRoadNet(dir + roadnetFile)) {
                 std::cerr << "loading  roadNet file error!" << std::endl;
             }
 
-            if (!loadFlow(dir + flowFile)){
+            if (!loadFlow(dir + flowFile)) {
                 std::cerr << "loading flow file error!" << std::endl;
             }
             // wyy modify: save replay
-            std::string roadnetLogFile = getJsonMember<const char*>("roadnetLogFile", document);
-            std::string replayLogFile = getJsonMember<const char*>("replayLogFile", document);
+            std::string roadnetLogFile = getJsonMember<const char *>("roadnetLogFile", document);
+            std::string replayLogFile = getJsonMember<const char *>("replayLogFile", document);
             setLogFile(dir + roadnetLogFile, dir + replayLogFile);
-        } catch (const JsonFormatError &e){
+        } catch (const JsonFormatError &e) {
             std::cerr << e.what() << std::endl;
             return false;
         }
         return true;
     }
 
-    bool Engine::loadRoadNet(const std::string &jsonFile){
+    bool Engine::loadRoadNet(const std::string &jsonFile) {
         bool ans = roadNet.loadFromJson(jsonFile);
         int cnt = 0;
 
-        for (Road &road : roadNet.getRoads()){
+        for (Road &road: roadNet.getRoads()) {
             threadRoadPool[cnt].push_back(&road);
-            cnt = (cnt +1) % threadNum;
+            cnt = (cnt + 1) % threadNum;
         }
-        for (Intersection &intersection : roadNet.getIntersections()){
+        for (Intersection &intersection: roadNet.getIntersections()) {
             threadIntersectionPool[cnt].push_back(&intersection);
             cnt = (cnt + 1) % threadNum;
         }
-        for (Drivable *drivable : roadNet.getDrivables()){
+        for (Drivable *drivable: roadNet.getDrivables()) {
             threadDrivablePool[cnt].push_back(drivable);
-            cnt = (cnt +1) % threadNum;
+            cnt = (cnt + 1) % threadNum;
         }
         // wyy modify: log replay_roadnet json
         jsonRoot.SetObject();
@@ -161,10 +161,10 @@ namespace SEUTraffic
         return ans;
     }
 
-    bool Engine::loadFlow(const std::string &jsonFilename){
+    bool Engine::loadFlow(const std::string &jsonFilename) {
         rapidjson::Document root;
-        if (!readJsonFromFile(jsonFilename, root)){
-            std::cerr << "cannot open flow file!"<< std::endl;
+        if (!readJsonFromFile(jsonFilename, root)) {
+            std::cerr << "cannot open flow file!" << std::endl;
             return false;
         }
         int flowIndex = 0;
@@ -172,23 +172,23 @@ namespace SEUTraffic
         try {
             if (!root.IsArray())
                 throw JsonTypeError("flow file", "array");
-            for (rapidjson::SizeType i = 0 ; i< root.Size();i++){
+            for (rapidjson::SizeType i = 0; i < root.Size(); i++) {
                 path.emplace_back("flow[" + std::to_string(i) + "]");
                 rapidjson::Value &flow = root[i];
                 std::vector<Road *> roads;
                 std::vector<Intersection *> inters;
                 const auto &routes = getJsonMemberArray("route", flow);
                 roads.reserve(routes.Size());
-                for (auto &route: routes.GetArray()){
+                for (auto &route: routes.GetArray()) {
                     path.emplace_back("route[" + std::to_string(roads.size()) + "]");
-                    if (!route.IsString()){
+                    if (!route.IsString()) {
                         throw JsonTypeError("route", "string");
                     }
                     std::string roadName = route.GetString();
                     auto road = roadNet.getRoadById(roadName);
                     if (!road)
                         throw JsonFormatError(
-                            "No such road: " + roadName);
+                                "No such road: " + roadName);
                     Intersection *endInter = road->getEndIntersection();
                     inters.push_back(endInter); // todo: which
                     roads.push_back(road);
@@ -203,17 +203,15 @@ namespace SEUTraffic
                 auto endTime = getJsonMember<int>("endTime", flow, -1);
                 VehicleInfo vehicleInfo(len, width, router);
                 Flow newFlow(vehicleInfo, getJsonMember<double>("interval", flow), this, startTime, endTime,
-                            "flow_"+std::to_string(i));
+                             "flow_" + std::to_string(i));
                 flows.push_back(newFlow);
                 path.pop_back();
             }
             assert(path.empty());
         }
-        catch (const JsonFormatError &e)
-        {
+        catch (const JsonFormatError &e) {
             std::cerr << "Error occurred when reading flow file" << std::endl;
-            for (const auto &node : path)
-            {
+            for (const auto &node: path) {
                 std::cerr << "/" << node;
             }
             std::cerr << " " << e.what() << std::endl;
@@ -222,179 +220,96 @@ namespace SEUTraffic
         return true;
     }
 
-    void Engine::vehicleControl(Vehicle &vehicle){
+    void Engine::vehicleControl(Vehicle &vehicle) {
         //todo
     }
 
-    void Engine::getAction(){
+    void Engine::getAction() {
         startBarrier.wait();
         endBarrier.wait();
     }
 
-    void Engine::updateAction(){
+    void Engine::updateAction() {
         startBarrier.wait();
         endBarrier.wait();
         vehicleRemoveBuffer.clear();// todo： 可以先不管
     }
 
     // wyy: function_主线程——更新每辆车的dist和变道， 设置结束等信息
-    void Engine::updateLocation()
-    {
+    void Engine::updateLocation() {
         updateLocationFlag = false;
-        // wyy Q: Why sort?
         std::sort(pushBuffer.begin(), pushBuffer.end(), vehicleCmp);
+        for (auto &vehiclePair: pushBuffer) {
+            Vehicle *vehicle = vehiclePair.first;
+            Drivable *curDrivable = vehicle->getCurDrivable();
+            Drivable *nextDrivable = vehicle->getNextDrivable();
+            Vehicle *leader = vehicle->getLeader();
+            double maxPossibleDist = vehiclePair.second;
+            double currentDist = vehicle->getDistance();
+            double currentDrivableLength = curDrivable->getLength();
 
-        for (auto& vehiclePair : pushBuffer) {
-            Vehicle* vehicle = vehiclePair.first;
-            // std::cerr << "the " << index << "th car " << std::endl;
-            double maxPosblDist = vehiclePair.second;
-
-            Drivable* curLane = vehicle->getCurDrivable();
-            Drivable* nextLane = vehicle->getNextDrivable();
-            Intersection* nextInter = vehicle->getNextIntersection();
-            Vehicle* leader = vehicle->getLeader();
-//            Road* curRoad = curLane->getBelongRoad(); // TODO: not sure whether problem here.
-
-            if (nextLane == nullptr) { //这里的分支可能有些冗余，我分为了下一条道路是终点和不是终点的情况
-                if (maxPosblDist > curLane->getLength()) {
-                    if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
-                        // wyy Q: what is setEnd
-                        double oldDist = vehicle->getTotalDist();
-                        vehicle->updateTotalDist(oldDist - vehicle->getDistance() + curLane->getLength());
+            // current vehicle is leader in this drivable
+            if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
+                double remainDist = currentDrivableLength - maxPossibleDist;
+                if (nextDrivable == nullptr) {
+                    // drive out of current drivable
+                    if (remainDist <= 0) {
                         vehicle->setEnd(true);
                         vehicle->setStop(false);
-                        double remainDist = curLane->getLength() - vehicle->getDistance();
-                        double remainRunningTime = remainDist / vehicle->getSpeed(); //ensure speed here
-                        double endtime = remainRunningTime + (double)currentTime;
-                        vehicle->setEndTime(endtime);
-
-                        avgSpeedSum += vehicle->getTotalDist() / (vehicle->getEndTime() - vehicle->getStartTime());
-                        addCumulativeTravelTime(vehicle->getEndTime() , vehicle->getStartTime());
+                        vehicle->setEndTime(currentTime + remainDist / vehicle->getSpeed());
                         vehicle->setDrivable(nullptr);
                         vehicleActiveCount--;
                         finishedVehicleCnt++;
-                        // curLane->popVehicle(); 注释掉的操作打算放到子线程中进行实现
-                    } else {
-                        double dist = leader->getBufferDist() - vehicle->getMinGap() - vehicle->getLen();
-                        double totalDist = vehicle->getTotalDist() - vehicle->getDistance() + dist+ curLane->getLength();
-                        vehicle->updateTotalDist(totalDist);
-                        vehicle->setDis(dist);
-                        if (leader->hasSetStop())
+                    } else { // still on this drivable
+                        vehicle->setDis(maxPossibleDist);
+                        vehicle->setStop(false);
+                    }
+                } else { // exist next drivable
+                    if(curDrivable->isLane() && !dynamic_cast<const LaneLink*>(curDrivable)->isAvailable()){
+                        vehicle->setStop(true);
+                        continue;
+                    }
+                    auto next_leader = nextDrivable->getLastVehicle();
+                    double safe_distance =
+                            next_leader->getBufferDist() - next_leader->getMinGap() - next_leader->getLen();
+                    if (remainDist >= 0) { // still on this drivable
+                        if (safe_distance >= 0 || (remainDist >= -safe_distance)) { // no overlap
+                            vehicle->setDis(maxPossibleDist);
+                            vehicle->setStop(false);
+                        } else { // overlap
+                            vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
                             vehicle->setStop(true);
-                        else
+                        }
+                    } else { // less than 0 means will possibly change drivable
+                        remainDist = -remainDist;
+                        if (remainDist <= safe_distance) { // no overlap
+                            vehicle->setDis(remainDist);
+                            vehicle->setDrivable(nextDrivable);
                             vehicle->setStop(false);
-
-                        vehicle->updateTotalDist(totalDist);
-                    }
-                } else { // 汽车还在这条道路上
-                    if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
-                        double oldDist = vehicle->getTotalDist(); 
-                        vehicle->updateTotalDist(oldDist - vehicle->getDistance() + maxPosblDist);
-                        vehicle->setDis(maxPosblDist);
-                        vehicle->setStop(false);
-                    } else {
-                        if (maxPosblDist > leader->getBufferDist() - leader->getMinGap() - leader->getLen()) { // 调整位置
-                            double pos = leader->getBufferDist() - leader->getMinGap() - leader->getLen();
-                            double oldDist = vehicle->getTotalDist();
-                            vehicle->updateTotalDist(oldDist - vehicle->getDistance() + pos);
-                            vehicle->setDis(pos);
-                            if (leader->hasSetStop())
-                                vehicle->setStop(true);
-                            else
-                                vehicle->setStop(false);
-                        } else { // 不超过leader的位置，不调整位置
-                            double oldDist = vehicle->getTotalDist();
-                            vehicle->updateTotalDist(oldDist - vehicle->getDistance() + maxPosblDist);
-                            vehicle->setDis(maxPosblDist);
-                            vehicle->setStop(false);
+                        } else { // over lap
+                            if (safe_distance >= 0) { // still can change drivable
+                                vehicle->setDis(safe_distance);
+                                vehicle->setDrivable(nextDrivable);
+                            } else { // cannot change drivable
+                                vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
+                            }
+                            vehicle->setStop(true);
                         }
                     }
                 }
-                continue;
-            }
-            nextLane->checkBelongRoad();
-            Road* nextRoad = nextLane->getBelongRoad();
-            if (leader == nullptr || leader->getChangedDrivable() != nullptr || leader->hasSetEnd()) { // 这里主要考虑的是leader已经换道路了
-                if (maxPosblDist > curLane->getLength()){
-                    RoadLink rlink = nextInter->getRoadLink(curRoad, nextRoad);
-                    if (!rlink.isAvailable()) {
-                        double oldDist = vehicle->getTotalDist();
-                        vehicle->setStop(true);
-                        vehicle->updateTotalDist(oldDist + curLane->getLength() - vehicle->getDistance());
-                        vehicle->setDis(curLane->getLength());
-                    } else { // 汽车进入下一条车道
-                        double deltaDist = maxPosblDist - curLane->getLength();
-                        double oldDist = vehicle->getTotalDist();
-                        Vehicle* leader = nextLane->getLastVehicle();
-                        int nextLaneCarCnt = nextLane->getVehicleCnt();
-                        if (leader == nullptr || leader->getBufferDist() >= deltaDist + leader->getMinGap() + leader->getLen()) {
-                            vehicle->updateTotalDist(oldDist - vehicle->getDistance() + curLane->getLength() + deltaDist);
-                            vehicle->setDis(deltaDist);
-                            vehicle->setStop(false);
-                            // change lane
-                            vehicle->setDrivable(nextLane);
-                            // todo:在子线程处理该车流的道路
-
-                            if (nextLane == nullptr) {
-                                vehicle->setEnd(true); // 结束
-                                std::cerr<<"cur lane length = " << curLane->getLength() <<" vehicle " << vehicle->getId() <<" enter the point. distance = " << vehicle->getDistance()<< std::endl;
-                                double remainDist = curLane->getLength() - vehicle->getDistance();
-                                double remainRunningTime = remainDist / vehicle->getSpeed();
-                                vehicle->setEndTime(remainRunningTime + currentTime);
-                                std::cerr << " add time, speed = "<< vehicle->getSpeed() << " cur lane len = " << curLane->getLength() << " vehicle dist = " << vehicle->getDistance() << std::endl;
-                                avgSpeedSum += (vehicle->getTotalDist() - deltaDist) / (vehicle->getEndTime() - vehicle->getStartTime());
-                                addCumulativeTravelTime(vehicle->getEndTime(), vehicle->getStartTime());
-                                vehicle->setDrivable(nullptr);
-                                vehicleActiveCount--;
-                                finishedVehicleCnt ++;
-                            }
-                            // else pushvehicle
-                        } else {
-                            double leaderDist = leader->getBufferDist();
-                            deltaDist = leaderDist - leader->getLen() - leader->getMinGap();
-                            if (deltaDist <= 0) { // 正好顶在了道路的顶端， 我为毛要把逻辑写的这么奇怪
-                                vehicle->updateTotalDist(oldDist - vehicle->getDistance() + curRoad->getLength());
-                                vehicle->setDis(curLane->getLength());
-                                vehicle->setStop(true); // 停下来了
-                                continue;
-                            } else {
-
-                                vehicle->updateTotalDist(oldDist - vehicle->getDistance() + curRoad->getLength() + deltaDist);
-                                vehicle->setDis(deltaDist);
-                                vehicle->setDrivable(nextLane);
-                                vehicle->setStop(false);
-                            }
-                        }
-                    }
-                } else { // 留在了原来的道路
-                    double oldDist = vehicle->getTotalDist();
-                    vehicle->setDis(maxPosblDist);
-                    vehicle->setStop(false);
-                    vehicle->updateTotalDist(oldDist - vehicle->getDistance() + maxPosblDist);
-                }
-            } else { // leader还留在原来的道路上
-                double oldDist = vehicle->getTotalDist();
-                if (leader->getBufferDist() >= maxPosblDist + leader->getMinGap() + leader->getLen()) {
-                    vehicle->updateTotalDist(oldDist - vehicle->getDistance() + maxPosblDist);
-                    vehicle->setDis(maxPosblDist);
-                    vehicle->setStop(false);
-                } else {
-                    double newDist = leader->getBufferDist() - leader->getMinGap() - leader->getLen();
-                    vehicle->updateTotalDist(oldDist - vehicle->getDistance() + newDist);
-                    vehicle->setDis(newDist);
-                    if (leader->hasSetStop()) {
-                        vehicle->setStop(true);
-                    } else
-                        vehicle->setStop(false);
-                }
+            } else { // has leader
+                vehicle->setDis(std::max(currentDist,
+                                         std::min(maxPossibleDist,
+                                                  leader->getBufferDist() - leader->getMinGap() - leader->getLen())));
+                vehicle->setStop(maxPossibleDist == vehicle->getBufferDist());
             }
         }
         updateLocationFlag = true;
         startBarrier.wait(); // 等运行完上述的逻辑后，让子线程对包含的vehicle进行删除换道操作
         endBarrier.wait(); // 等子线程的操作运行完之后，对包含的vehicle进行更新新道路操作push vehicle
-        for (auto& vehiclePair : pushBuffer) {
-            Vehicle* vehicle = vehiclePair.first;
-            Drivable* drivable = vehicle->getChangedDrivable();
+        for (auto &vehiclePair: pushBuffer) {
+            Vehicle *vehicle = vehiclePair.first;
+            Drivable *drivable = vehicle->getChangedDrivable();
             if (drivable != nullptr) {
                 drivable->pushVehicle(vehicle);
             }
@@ -402,21 +317,19 @@ namespace SEUTraffic
         pushBuffer.clear();
     }
 
-    void Engine::addCumulativeTravelTime(double endTime , double startTime)
-    {
+    void Engine::addCumulativeTravelTime(double endTime, double startTime) {
         cumulativeTravelTime += endTime - startTime;
     }
 
-    void Engine::updateLeaderAndGap(){
+    void Engine::updateLeaderAndGap() {
         startBarrier.wait();
         endBarrier.wait();
     }
 
-    void Engine::threadController(std::set<Vehicle*>& vehicles,
-        std::vector<Road*>& roads,
-        std::vector<Intersection*>& intersections,
-        std::vector<Drivable*>& drivables){
-        //todo
+    void Engine::threadController(std::set<Vehicle *> &vehicles,
+                                  std::vector<Road *> &roads,
+                                  std::vector<Intersection *> &intersections,
+                                  std::vector<Drivable *> &drivables) {
         while (!finished) {
             threadGetAction(vehicles);
             threadUpdateLocation(drivables);
@@ -425,9 +338,8 @@ namespace SEUTraffic
         }
     }
 
-    void Engine::step(int interval, std::map<std::string, int> &actions)
-    {
-        for (auto inter : roadNet.getIntersections()) {
+    void Engine::step(int interval, std::map<std::string, int> &actions) {
+        for (auto inter: roadNet.getIntersections()) {
             std::string interId = inter.getId();
             int phase = actions[interId];
             inter.getTrafficLight().setPhase(phase);
@@ -438,16 +350,14 @@ namespace SEUTraffic
         }
     }
 
-    void Engine::step2(int interval)
-    {
+    void Engine::step2(int interval) {
         for (int i = 0; i < interval; i++) { // 表示会保持当前的信号调度运行interval的时间
             nextStep();
         }
     }
 
-    void Engine::nextStep()
-    {
-        for (auto& flow : flows) {
+    void Engine::nextStep() {
+        for (auto &flow: flows) {
             flow.nextStep(interval);
         }
         //std::cerr << "now cars in engine are " << totalVehicleCnt << " cur time = " << currentTime <<std::endl;
@@ -462,8 +372,7 @@ namespace SEUTraffic
         updateLog();
     }
 
-    bool Engine::checkPriority(size_t priority)
-    {
+    bool Engine::checkPriority(size_t priority) {
         return vehiclePool.find(priority) != vehiclePool.end();
     }
 
@@ -474,31 +383,31 @@ namespace SEUTraffic
         vehicleMap.emplace(vehicle->getId(), vehicle);
         threadVehiclePool[threadIndex].insert(vehicle);
 
-         auto leader = vehicle->getCurDrivable()->getLastVehicle();
-         vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
-         vehicle->setLeader(leader);
-         vehicleActiveCount++;
-         totalVehicleCnt++;
+        auto leader = vehicle->getCurDrivable()->getLastVehicle();
+        vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
+        vehicle->setLeader(leader);
+        vehicleActiveCount++;
+        totalVehicleCnt++;
 //        if (pushToDrivable)
 //            ((Lane *) vehicle->getCurDrivable())->pushWaitingVehicle(vehicle);
     }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
-    void Engine::threadGetAction(std::set<Vehicle *> &vehicles)
-    {
+    void Engine::threadGetAction(std::set<Vehicle *> &vehicles) {
         startBarrier.wait();
-        std::vector<std::pair<Vehicle * , double>> buffer;
-        for (auto vehicle : vehicles) {
+        std::vector<std::pair<Vehicle *, double>> buffer;
+        for (auto vehicle: vehicles) {
             // wyy:这里curlan和belongRoad有什么用
-            Drivable* curLane = vehicle->getCurDrivable();
+            Drivable *curLane = vehicle->getCurDrivable();
             if (curLane == nullptr) {
-                std::cerr<<vehicle->getId()<<std::endl;
+                std::cerr << vehicle->getId() << std::endl;
             }
 //            Road* belongRoad = curLane->getBelongRoad();
 
             if (vehicle->isRunning()) {
                 double runningTime;
-                if (vehicle->getStartTime() >= currentTime && vehicle->getStartTime() < currentTime + interval) { // start time
+                if (vehicle->getStartTime() >= currentTime &&
+                    vehicle->getStartTime() < currentTime + interval) { // start time
                     runningTime = interval - (vehicle->getStartTime() - currentTime); // 这里注意一个问题就是运行时间应该只会是1
                 } else {
                     runningTime = interval; // 默认的interval为1s
@@ -517,15 +426,14 @@ namespace SEUTraffic
     }
 
     // wyy: function_对每个drivable删除已变道或已end的车， 更新removeBuffer，map
-    void Engine::threadUpdateLocation(const std::vector<Drivable *> &drivables)
-    {
+    void Engine::threadUpdateLocation(const std::vector<Drivable *> &drivables) {
         startBarrier.wait(); //等主线程执行完后进行删除车辆操作
         assert(updateLocationFlag == true);
-        for (Drivable* drivable : drivables) {  //这里引用的vehicle从drivable的vehicles中拿出来，updatelocation中是从pushbuffer里引用，源头确实是threadvehiclepool，所以在后面再次遍历的时候vehicle的状态改变
+        for (Drivable *drivable: drivables) {  //这里引用的vehicle从drivable的vehicles中拿出来，updatelocation中是从pushbuffer里引用，源头确实是threadvehiclepool，所以在后面再次遍历的时候vehicle的状态改变
             auto &vehicles = drivable->getVehicles(); // 为什么要加上&
             auto vehicleIter = vehicles.begin(); // 这是个指针
             while (vehicleIter != vehicles.end()) {
-                Vehicle* vehicle = *vehicleIter;
+                Vehicle *vehicle = *vehicleIter;
                 if (vehicle->getChangedDrivable() != nullptr || vehicle->hasSetEnd()) {
                     vehicleIter = vehicles.erase(vehicleIter);
                 } else {
@@ -534,7 +442,6 @@ namespace SEUTraffic
 
                 if (vehicle->hasSetEnd()) { // 在这里就删除车辆，不知道会不会有问题 TODO
                     std::lock_guard<std::mutex> guard(lock);
-                    // std::cerr<<"delete car "<<vehicle->getId()<<std::endl; TODO
                     vehicleRemoveBuffer.insert(vehicle);
                     vehicleMap.erase(vehicle->getId());
                     auto iter = vehiclePool.find(vehicle->getPriority());
@@ -548,10 +455,9 @@ namespace SEUTraffic
     }
 
     // wyy: function_对每辆车更新buffer中的信息
-    void Engine::threadUpdateAction(std::set<Vehicle *> &vehicles)
-    {
+    void Engine::threadUpdateAction(std::set<Vehicle *> &vehicles) {
         startBarrier.wait();
-        for (auto vehicle : vehicles) {
+        for (auto vehicle: vehicles) {
             if (vehicle->isRunning()) {
                 vehicle->update();
             }
@@ -560,12 +466,11 @@ namespace SEUTraffic
     }
 
     // wyy: function_对每辆车更新leader和gap
-    void Engine::threadUpdateLeaderAndGap(const std::vector<Drivable *> &drivables)
-    {
+    void Engine::threadUpdateLeaderAndGap(const std::vector<Drivable *> &drivables) {
         startBarrier.wait();
-        for (Drivable* drivable : drivables) {
+        for (Drivable *drivable: drivables) {
             Vehicle *leader = nullptr;
-            for (Vehicle* vehicle : drivable->getVehicles()) {
+            for (Vehicle *vehicle: drivable->getVehicles()) {
                 vehicle->updateLeaderAndGap(leader);
                 leader = vehicle;
             }
@@ -573,12 +478,11 @@ namespace SEUTraffic
         endBarrier.wait();
     }
 
-    double Engine::getAverageTravelTime()
-    {
+    double Engine::getAverageTravelTime() {
         double tt = cumulativeTravelTime;
         // std::cerr<< " cumu time = " << tt << std::endl;
         int n = finishedVehicleCnt;
-        for (auto& vehiclePair : vehiclePool) {
+        for (auto &vehiclePair: vehiclePool) {
             tt += currentTime - vehiclePair.second.first->getStartTime(); // 思考这里有什么问题
             n++;
         }
@@ -588,22 +492,19 @@ namespace SEUTraffic
         else return tt / n;
     }
 
-    void Engine::setTrafficLightPhase(std::string id, int phaseIndex )
-    {
+    void Engine::setTrafficLightPhase(std::string id, int phaseIndex) {
         roadNet.getIntersectionById(id)->getTrafficLight().setPhase(phaseIndex);
     }
 
-    size_t Engine::getVehicleCount() const
-    {
+    size_t Engine::getVehicleCount() const {
         return vehicleActiveCount;
     }
 
-    std::vector<const Vehicle *> Engine::getRunningVehicles(bool includeWaiting) const
-    {
-        std::vector<const Vehicle*> ret;
+    std::vector<const Vehicle *> Engine::getRunningVehicles(bool includeWaiting) const {
+        std::vector<const Vehicle *> ret;
         ret.reserve(vehicleActiveCount);
-        for (const auto& vehiclePair : vehiclePool) {
-            const Vehicle* vehicle = vehiclePair.second.first;
+        for (const auto &vehiclePair: vehiclePool) {
+            const Vehicle *vehicle = vehiclePair.second.first;
             if ((vehicle->isStopped() && includeWaiting) || vehicle->isRunning()) {
                 ret.emplace_back(vehicle);
             }
@@ -611,31 +512,28 @@ namespace SEUTraffic
         return ret;
     }
 
-    std::vector<std::string> Engine::getVehicles(bool includeWaiting) const
-    {
+    std::vector<std::string> Engine::getVehicles(bool includeWaiting) const {
         std::vector<std::string> ret;
         ret.reserve(vehicleActiveCount);
-        for (const Vehicle* vehicle : getRunningVehicles(includeWaiting)) {
+        for (const Vehicle *vehicle: getRunningVehicles(includeWaiting)) {
             ret.emplace_back(vehicle->getId());
         }
         return ret;
     }
 
-    std::map<std::string, int> Engine::getLaneVehicleCount() const
-    {
+    std::map<std::string, int> Engine::getLaneVehicleCount() const {
         std::map<std::string, int> ret;
-        for (const Lane* lane : roadNet.getLanes()) {
+        for (const Lane *lane: roadNet.getLanes()) {
             ret.emplace(lane->getId(), lane->getVehicleCnt());
         }
         return ret;
     }
 
-    std::map<std::string, int> Engine::getLaneWaitingVehicleCount() const
-    {
+    std::map<std::string, int> Engine::getLaneWaitingVehicleCount() const {
         std::map<std::string, int> ret;
-        for (const Lane* lane : roadNet.getLanes()) {
+        for (const Lane *lane: roadNet.getLanes()) {
             int cnt = 0;
-            for (Vehicle* vehicle : lane->getVehicles()) {
+            for (Vehicle *vehicle: lane->getVehicles()) {
                 if (vehicle->isStopped()) {
                     cnt++;
                 }
@@ -645,14 +543,11 @@ namespace SEUTraffic
         return ret;
     }
 
-    std::map<std::string, std::vector<std::string>> Engine::getLaneVehicles()
-    {
+    std::map<std::string, std::vector<std::string>> Engine::getLaneVehicles() {
         std::map<std::string, std::vector<std::string>> ret;
-        for (const Lane *lane : roadNet.getLanes())
-        {
+        for (const Lane *lane: roadNet.getLanes()) {
             std::vector<std::string> vehicles;
-            for (Vehicle *vehicle : lane->getVehicles())
-            { // 怎么更新lane上车辆
+            for (Vehicle *vehicle: lane->getVehicles()) { // 怎么更新lane上车辆
                 vehicles.push_back(vehicle->getId());
             }
             ret.emplace(lane->getId(), vehicles);
@@ -660,47 +555,39 @@ namespace SEUTraffic
         return ret;
     }
 
-    std::map<std::string, std::string> Engine::getVehicleInfo(const std::string &id) const
-    {
+    std::map<std::string, std::string> Engine::getVehicleInfo(const std::string &id) const {
         auto iter = vehicleMap.find(id);
-        if (iter == vehicleMap.end())
-        {
+        if (iter == vehicleMap.end()) {
             throw std::runtime_error("Vehicle '" + id + "' not found");
-        }
-        else
-        {
+        } else {
             Vehicle *vehicle = iter->second;
             return vehicle->getInfo();
         }
     }
 
-    std::map<std::string, double> Engine::getVehicleSpeed() const
-    {
+    std::map<std::string, double> Engine::getVehicleSpeed() const {
         std::map<std::string, double> ret;
-        for (const Vehicle *vehicle : getRunningVehicles(true))
-        {
+        for (const Vehicle *vehicle: getRunningVehicles(true)) {
             ret.emplace(vehicle->getId(), vehicle->getSpeed());
         }
         return ret;
     }
 
-    std::map<std::string, double> Engine::getVehicleDistance() const
-    {
+    std::map<std::string, double> Engine::getVehicleDistance() const {
         std::map<std::string, double> ret;
-        for (const Vehicle *vehicle : getRunningVehicles(true)) {
+        for (const Vehicle *vehicle: getRunningVehicles(true)) {
             ret.emplace(vehicle->getId(), vehicle->getDistance());
         }
         return ret;
     }
 
-    std::string Engine::getLeader(const std::string &vehicleId) const
-    {
+    std::string Engine::getLeader(const std::string &vehicleId) const {
         auto iter = vehicleMap.find(vehicleId);
         if (iter == vehicleMap.end()) {
             throw std::runtime_error("Vehicle '" + vehicleId + "'not found");
         } else {
-            Vehicle* vehicle = iter->second;
-            Vehicle* leader = vehicle->getLeader();
+            Vehicle *vehicle = iter->second;
+            Vehicle *leader = vehicle->getLeader();
             if (leader) {
                 return leader->getId();
             } else
@@ -708,14 +595,13 @@ namespace SEUTraffic
         }
     }
 
-    void Engine::reset(bool resetRnd)
-    {
+    void Engine::reset(bool resetRnd) {
         currentTime = 0;
 
-        for (auto& vehiclePair : vehiclePool) {
+        for (auto &vehiclePair: vehiclePool) {
             delete vehiclePair.second.first;
         }
-        for (auto& pool : threadVehiclePool) {
+        for (auto &pool: threadVehiclePool) {
             pool.clear();
         }
         vehiclePool.clear();
@@ -724,7 +610,7 @@ namespace SEUTraffic
 
         finishedVehicleCnt = 0;
         cumulativeTravelTime = 0;
-        for (auto &flow : flows) {
+        for (auto &flow: flows) {
             flow.reset();
         }
         steps = 0;
