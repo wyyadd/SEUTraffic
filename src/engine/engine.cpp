@@ -266,20 +266,25 @@ namespace SEUTraffic {
                         vehicle->setStop(false);
                     }
                 } else { // exist next drivable
-                    if(curDrivable->isLane() && !dynamic_cast<const LaneLink*>(nextDrivable)->isAvailable()){
-                        vehicle->setStop(true);
-                        continue;
-                    }
                     auto next_leader = nextDrivable->getLastVehicle();
+                    bool canNotGo = curDrivable->isLane() && !dynamic_cast<const LaneLink*>(nextDrivable)->isAvailable();
                     // if next drivable has no vehicles
                     if(next_leader == nullptr || next_leader->hasSetEnd() || next_leader->getChangedDrivable() != nullptr){
-                        if(remainDist > 0)
+                        if(remainDist > 0) {
                             vehicle->setDis(maxPossibleDist);
-                        else {
-                            vehicle->setDis(-remainDist);
-                            vehicle->setDrivable(nextDrivable);
+                            vehicle->setStop(false);
                         }
-                        vehicle->setStop(false);
+                        else {
+                            // if red light then stop
+                            if(canNotGo){
+                                vehicle->setDis(currentDrivableLength);
+                                vehicle->setStop(true);
+                            }else{
+                                vehicle->setDis(-remainDist);
+                                vehicle->setDrivable(nextDrivable);
+                                vehicle->setStop(false);
+                            }
+                        }
                         continue;
                     }
                     double safe_distance =
@@ -290,18 +295,30 @@ namespace SEUTraffic {
                             vehicle->setStop(false);
                         } else { // overlap
                             vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
+                            // ?
                             vehicle->setStop(true);
                         }
                     } else { // less than 0 means will possibly change drivable
                         remainDist = -remainDist;
                         if (remainDist <= safe_distance) { // no overlap
-                            vehicle->setDis(remainDist);
-                            vehicle->setDrivable(nextDrivable);
-                            vehicle->setStop(false);
+                            // if red light then stop
+                            if(canNotGo){
+                                vehicle->setDis(currentDrivableLength);
+                                vehicle->setStop(true);
+                            }else {
+                                vehicle->setDis(remainDist);
+                                vehicle->setDrivable(nextDrivable);
+                                vehicle->setStop(false);
+                            }
                         } else { // over lap
                             if (safe_distance >= 0) { // still can change drivable
-                                vehicle->setDis(safe_distance);
-                                vehicle->setDrivable(nextDrivable);
+                                // if red light then stop
+                                if(canNotGo){
+                                    vehicle->setDis(currentDrivableLength);
+                                }else {
+                                    vehicle->setDis(safe_distance);
+                                    vehicle->setDrivable(nextDrivable);
+                                }
                             } else { // cannot change drivable
                                 vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
                             }
@@ -313,7 +330,7 @@ namespace SEUTraffic {
                 vehicle->setDis(std::max(currentDist,
                                          std::min(maxPossibleDist,
                                                   leader->getBufferDist() - leader->getMinGap() - leader->getLen())));
-                vehicle->setStop(maxPossibleDist == vehicle->getBufferDist());
+                vehicle->setStop(maxPossibleDist != vehicle->getBufferDist());
             }
         }
         updateLocationFlag = true;
