@@ -84,9 +84,8 @@ namespace SEUTraffic {
         // wyy modify: log
         logOut.close();
         finished = true;
-        for (auto &thread: threadPool) {
-            thread.join();
-        }
+        startBarrier.wait();
+        for (auto &thread: threadPool) thread.join();
         for (auto &vehiclePair: vehiclePool) {
             delete vehiclePair.second.first;
         }
@@ -334,7 +333,7 @@ namespace SEUTraffic {
         }
         updateLocationFlag = true;
         startBarrier.wait(); // 等运行完上述的逻辑后，让子线程对包含的vehicle进行删除换道操作
-        endBarrier.wait(); // 等子线程的操作运行完之后，对包含的vehicle进行更新新道路操作push vehicle
+//        endBarrier.wait(); // 等子线程的操作运行完之后，对包含的vehicle进行更新新道路操作push vehicle
         for (auto &vehiclePair: pushBuffer) {
             Vehicle *vehicle = vehiclePair.first;
             Drivable *drivable = vehicle->getChangedDrivable();
@@ -343,6 +342,8 @@ namespace SEUTraffic {
             }
         }
         pushBuffer.clear();
+        //对包含的vehicle进行更新新道路操作push vehicle
+        endBarrier.wait(); // 先主线程的操作，后子线程操作, 因为子线程要进行删除操作， 主线程不能push已经删除的vehicle
     }
 
     void Engine::addCumulativeTravelTime(double endTime, double startTime) {
@@ -358,8 +359,10 @@ namespace SEUTraffic {
                                   std::vector<Road *> &roads,
                                   std::vector<Intersection *> &intersections,
                                   std::vector<Drivable *> &drivables) {
-        while (!finished) {
+        while (true) {
             threadGetAction(vehicles);
+            if(finished)
+                break;
             threadUpdateLocation(drivables);
             threadUpdateAction(vehicles);
             threadUpdateLeaderAndGap(drivables);
@@ -427,6 +430,8 @@ namespace SEUTraffic {
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
     void Engine::threadGetAction(std::set<Vehicle *> &vehicles) {
         startBarrier.wait();
+        if(finished)
+            return;
         std::vector<std::pair<Vehicle *, double>> buffer;
         for (auto vehicle: vehicles) {
             // wyy:这里curlan和belongRoad有什么用
@@ -450,10 +455,9 @@ namespace SEUTraffic {
                 buffer.emplace_back(vehicle, deltaDist);
             }
         }
-        {
-            std::lock_guard<std::mutex> guard(lock);
-            pushBuffer.insert(pushBuffer.end(), buffer.begin(), buffer.end());
-        }
+        std::unique_lock<std::mutex> guard(lock);
+        pushBuffer.insert(pushBuffer.end(), buffer.begin(), buffer.end());
+        guard.unlock();
         endBarrier.wait();
     }
 
@@ -461,29 +465,31 @@ namespace SEUTraffic {
     void Engine::threadUpdateLocation(const std::vector<Drivable *> &drivables) {
         startBarrier.wait(); //等主线程执行完后进行删除车辆操作
         assert(updateLocationFlag == true);
+        endBarrier.wait(); // 等待主线程
         for (Drivable *drivable: drivables) {  //这里引用的vehicle从drivable的vehicles中拿出来，updatelocation中是从pushbuffer里引用，源头确实是threadvehiclepool，所以在后面再次遍历的时候vehicle的状态改变
             auto &vehicles = drivable->getVehicles(); // 为什么要加上&
             auto vehicleIter = vehicles.begin(); // 这是个指针
             while (vehicleIter != vehicles.end()) {
                 Vehicle *vehicle = *vehicleIter;
-                if (vehicle->getChangedDrivable() != nullptr || vehicle->hasSetEnd()) {
+                if ((vehicle->getChangedDrivable() != nullptr && vehicle->getChangedDrivable() != drivable)|| vehicle->hasSetEnd()) {
                     vehicleIter = vehicles.erase(vehicleIter);
                 } else {
                     vehicleIter++;
                 }
 
                 if (vehicle->hasSetEnd()) { // 在这里就删除车辆，不知道会不会有问题 TODO
-                    std::lock_guard<std::mutex> guard(lock);
+                    std::unique_lock<std::mutex> guard(lock);
 //                    vehicleRemoveBuffer.insert(vehicle);
                     vehicleMap.erase(vehicle->getId());
                     auto iter = vehiclePool.find(vehicle->getPriority());
                     threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
                     delete vehicle;
                     vehiclePool.erase(iter);
+                    guard.unlock();
                 }
             }
         }
-        endBarrier.wait(); // 等待子线程做完删除后，主线程在进行所有的换道更新
+//        endBarrier.wait(); // 等待子线程做完删除后，主线程在进行所有的换道更新
     }
 
     // wyy: function_对每辆车更新buffer中的信息
