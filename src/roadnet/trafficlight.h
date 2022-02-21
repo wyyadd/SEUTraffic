@@ -24,7 +24,7 @@ namespace SEUTraffic{
             return roadLinkAvailable;
         }
 
-        int getPhaseIndex()
+        unsigned int getPhaseIndex() const
         {
             return phase;
         }

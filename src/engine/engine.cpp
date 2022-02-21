@@ -254,7 +254,7 @@ namespace SEUTraffic {
                 double remainDist = currentDrivableLength - maxPossibleDist;
                 if (nextDrivable == nullptr) {
                     // drive out of current drivable
-                    if (remainDist <= 0) {
+                    if (remainDist < 0) {
                         vehicle->setEnd(true);
                         vehicle->setStop(false);
                         vehicle->setEndTime(currentTime + remainDist / vehicle->getSpeed());
@@ -270,7 +270,7 @@ namespace SEUTraffic {
                     bool canNotGo = curDrivable->isLane() && !dynamic_cast<const LaneLink*>(nextDrivable)->isAvailable();
                     // if next drivable has no vehicles
                     if(next_leader == nullptr || next_leader->hasSetEnd() || next_leader->getChangedDrivable() != nullptr){
-                        if(remainDist > 0) {
+                        if(remainDist >= 0) {
                             vehicle->setDis(maxPossibleDist);
                             vehicle->setStop(false);
                         }
@@ -289,13 +289,12 @@ namespace SEUTraffic {
                     }
                     double safe_distance =
                             next_leader->getBufferDist() - next_leader->getMinGap() - next_leader->getLen();
-                    if (remainDist > 0) { // still on this drivable
+                    if (remainDist >= 0) { // still on this drivable
                         if (safe_distance >= 0 || (remainDist >= -safe_distance)) { // no overlap
                             vehicle->setDis(maxPossibleDist);
                             vehicle->setStop(false);
                         } else { // overlap
                             vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                            // ?
                             vehicle->setStop(true);
                         }
                     } else { // less than 0 means will possibly change drivable
@@ -389,15 +388,19 @@ namespace SEUTraffic {
         for (auto &flow: flows) {
             flow.nextStep(interval);
         }
-        //std::cerr << "now cars in engine are " << totalVehicleCnt << " cur time = " << currentTime <<std::endl;
         getAction();
         updateLocation();
         updateAction();
         updateLeaderAndGap();
+
+        // update traffic light
+        std::vector<Intersection> &intersections = roadNet.getIntersections();
+        for (auto &intersection : intersections)
+            intersection.getTrafficLight().passTime(interval);
+
         steps += 1;
         currentTime += 1;
 
-        // wyy modify: updateLog
         updateLog();
     }
 
