@@ -1,7 +1,7 @@
 {
     "interval": 10,
     "seed": 0,
-    "dir": "../cityflow_config/syn_4x4/",
+    "dir": "cityflow_config/syn_4x4/",
     "roadnetFile": "roadnet.json",
     "flowFile": "flow.json",
     "rlTrafficLight": true,

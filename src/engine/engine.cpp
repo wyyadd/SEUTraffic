@@ -199,8 +199,8 @@ namespace SEUTraffic {
                 const auto &vehicle = getJsonMemberObject("vehicle", flow);
                 auto len = getJsonMember<double>("length", vehicle);
                 auto width = getJsonMember<double>("width", vehicle);
-                auto startTime = getJsonMember<int>("startTime", flow, 0);
-                auto endTime = getJsonMember<int>("endTime", flow, -1);
+                auto startTime = (int)getJsonMember<double>("startTime", flow, 0);
+                auto endTime = (int)getJsonMember<double>("endTime", flow, -1);
                 auto minGap = getJsonMember<double>("minGap", vehicle);
                 VehicleInfo vehicleInfo(len, width, minGap, router);
                 Flow newFlow(vehicleInfo,
