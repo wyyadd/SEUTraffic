@@ -1,5 +1,5 @@
-#ifndef CITYFLOW_TYPEDEF_H
-#define CITYFLOW_TYPEDEF_H
+#ifndef SEUTRAFFIC_UTILITY_H
+#define SEUTRAFFIC_UTILITY_H
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -147,4 +147,4 @@ namespace SEUTraffic
         return str;
     }
 }
-#endif
+#endif // SEUTRAFFIC_UTILITY_H

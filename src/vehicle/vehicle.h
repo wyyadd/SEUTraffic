@@ -1,5 +1,5 @@
-#ifndef CITYFLOW_VEHICLE_H
-#define CITYFLOW_VEHICLE_H
+#ifndef SEUTRAFFIC_VEHICLE_H
+#define SEUTRAFFIC_VEHICLE_H
 
 #include "utility/utility.h"
 #include <cerrno>
@@ -69,6 +69,7 @@ namespace SEUTraffic{
         double totalDist = 0; // record for avg speed compute
 
         // wyy modify
+        std::vector<Drivable* > planned;
         int currentDrivableIndex = 0;
 
         Flow *flow;
@@ -190,4 +191,4 @@ namespace SEUTraffic{
 
     };
 }
-#endif
+#endif // SEUTRAFFIC_VEHICLE_H

@@ -32,4 +32,5 @@ namespace SEUTraffic {
         currentTime = 0;
         cnt = 0;
     }
+
 }

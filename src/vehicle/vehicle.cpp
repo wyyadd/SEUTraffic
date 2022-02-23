@@ -17,6 +17,7 @@ namespace SEUTraffic
         controllerInfo.running = true;
         while (engine->checkPriority(priority = engine->rnd()));
         startTime = engine->getCurrentTime();
+        planned = vehicleInfo.getRouter().initRoutePlan();
     }
 
     Drivable* Vehicle::getCurDrivable() const
@@ -26,7 +27,10 @@ namespace SEUTraffic
 
     Drivable* Vehicle::getNextDrivable()
     {
-        return vehicleInfo.getRouter().getNextDrivable(currentDrivableIndex+1);
+        int i = currentDrivableIndex + 1;
+        if (i < this->planned.size()) {
+            return planned[i];
+        } else return nullptr;
     }
 
     Intersection* Vehicle::getNextIntersection()
@@ -69,7 +73,6 @@ namespace SEUTraffic
         {
             controllerInfo.drivable = buffer.drivable;
             buffer.isDrivableSet = false;
-//            vehicleInfo.getRouter().update(controllerInfo.drivable);
         }
     }
 
@@ -96,7 +99,7 @@ namespace SEUTraffic
         }
         // add routing info
         std::string route;
-        for (const auto r : vehicleInfo.getRouter().getFollowingRoads()) {
+        for (const auto r : vehicleInfo.getRouter().getRoute()) {
             route +=r->getId() + " ";
         }
         info["route"] = route;

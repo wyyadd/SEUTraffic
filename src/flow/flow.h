@@ -41,10 +41,10 @@ namespace SEUTraffic {
 
         bool isValid() const { return this->valid; }
 
-        void setValid(const bool valid) {
-            if (this->valid && !valid)
+        void setValid(const bool v) {
+            if (this->valid && !v)
                 std::cerr << "[warning] Invalid route '" << id << "'. Omitted by default." << std::endl;
-            this->valid = valid;
+            this->valid = v;
         }
 
         void reset();

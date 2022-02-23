@@ -201,8 +201,10 @@ namespace SEUTraffic {
                 auto width = getJsonMember<double>("width", vehicle);
                 auto startTime = getJsonMember<int>("startTime", flow, 0);
                 auto endTime = getJsonMember<int>("endTime", flow, -1);
-                VehicleInfo vehicleInfo(len, width, router);
-                Flow newFlow(vehicleInfo, getJsonMember<double>("interval", flow), this, startTime, endTime,
+                auto minGap = getJsonMember<double>("minGap", vehicle);
+                VehicleInfo vehicleInfo(len, width, minGap, router);
+                Flow newFlow(vehicleInfo,
+                             getJsonMember<double>("interval", flow), this, startTime, endTime,
                              "flow_" + std::to_string(i));
                 flows.push_back(newFlow);
                 path.pop_back();
@@ -266,19 +268,20 @@ namespace SEUTraffic {
                     }
                 } else { // exist next drivable
                     auto next_leader = nextDrivable->getLastVehicle();
-                    bool canNotGo = curDrivable->isLane() && !dynamic_cast<const LaneLink*>(nextDrivable)->isAvailable();
+                    bool canNotGo =
+                            curDrivable->isLane() && !dynamic_cast<const LaneLink *>(nextDrivable)->isAvailable();
                     // if next drivable has no vehicles
-                    if(next_leader == nullptr || next_leader->hasSetEnd() || next_leader->getChangedDrivable() != nullptr){
-                        if(remainDist >= 0) {
+                    if (next_leader == nullptr || next_leader->hasSetEnd() ||
+                        next_leader->getChangedDrivable() != nullptr) {
+                        if (remainDist >= 0) {
                             vehicle->setDis(maxPossibleDist);
                             vehicle->setStop(false);
-                        }
-                        else {
+                        } else {
                             // if red light then stop
-                            if(canNotGo){
+                            if (canNotGo) {
                                 vehicle->setDis(currentDrivableLength);
                                 vehicle->setStop(true);
-                            }else{
+                            } else {
                                 vehicle->setDis(-remainDist);
                                 vehicle->setDrivable(nextDrivable);
                                 vehicle->setStop(false);
@@ -300,10 +303,10 @@ namespace SEUTraffic {
                         remainDist = -remainDist;
                         if (remainDist <= safe_distance) { // no overlap
                             // if red light then stop
-                            if(canNotGo){
+                            if (canNotGo) {
                                 vehicle->setDis(currentDrivableLength);
                                 vehicle->setStop(true);
-                            }else {
+                            } else {
                                 vehicle->setDis(remainDist);
                                 vehicle->setDrivable(nextDrivable);
                                 vehicle->setStop(false);
@@ -311,9 +314,9 @@ namespace SEUTraffic {
                         } else { // over lap
                             if (safe_distance >= 0) { // still can change drivable
                                 // if red light then stop
-                                if(canNotGo){
+                                if (canNotGo) {
                                     vehicle->setDis(currentDrivableLength);
-                                }else {
+                                } else {
                                     vehicle->setDis(safe_distance);
                                     vehicle->setDrivable(nextDrivable);
                                 }
@@ -361,7 +364,7 @@ namespace SEUTraffic {
                                   std::vector<Drivable *> &drivables) {
         while (true) {
             threadGetAction(vehicles);
-            if(finished)
+            if (finished)
                 break;
             threadUpdateLocation(drivables);
             threadUpdateAction(vehicles);
@@ -398,7 +401,7 @@ namespace SEUTraffic {
 
         // update traffic light
         std::vector<Intersection> &intersections = roadNet.getIntersections();
-        for (auto &intersection : intersections)
+        for (auto &intersection: intersections)
             intersection.getTrafficLight().passTime(interval);
 
         steps += 1;
@@ -430,7 +433,7 @@ namespace SEUTraffic {
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
     void Engine::threadGetAction(std::set<Vehicle *> &vehicles) {
         startBarrier.wait();
-        if(finished)
+        if (finished)
             return;
         std::vector<std::pair<Vehicle *, double>> buffer;
         for (auto vehicle: vehicles) {
@@ -471,7 +474,8 @@ namespace SEUTraffic {
             auto vehicleIter = vehicles.begin(); // 这是个指针
             while (vehicleIter != vehicles.end()) {
                 Vehicle *vehicle = *vehicleIter;
-                if ((vehicle->getChangedDrivable() != nullptr && vehicle->getChangedDrivable() != drivable)|| vehicle->hasSetEnd()) {
+                if ((vehicle->getChangedDrivable() != nullptr && vehicle->getChangedDrivable() != drivable) ||
+                    vehicle->hasSetEnd()) {
                     vehicleIter = vehicles.erase(vehicleIter);
                 } else {
                     vehicleIter++;

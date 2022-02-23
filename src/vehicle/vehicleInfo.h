@@ -1,5 +1,5 @@
-#ifndef CITYFLOW_VEHICLEINFO_H
-#define CITYFLOW_VEHICLEINFO_H
+#ifndef SEUTRAFFIC_VEHICLEINFO_H
+#define SEUTRAFFIC_VEHICLEINFO_H
 
 #include <utility>
 
@@ -18,7 +18,8 @@ namespace SEUTraffic {
         std::shared_ptr<const Router> router = nullptr;
 
     public:
-        VehicleInfo(double length, double width, std::shared_ptr<const Router>& router ):length(length), width(width), router(router) {};
+        VehicleInfo(double length, double width, double minGap, std::shared_ptr<const Router>& router)
+                            : length(length), width(width), minGap(minGap), router(router) {};
 
         Road *getFirstRoad() const;
 
@@ -35,4 +36,4 @@ namespace SEUTraffic {
         double getWidth() const { return this->width;}
     };
 }
-#endif
+#endif // SEUTRAFFIC_VEHICLEINFO_H

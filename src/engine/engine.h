@@ -1,3 +1,5 @@
+#ifndef SEUTRAFFIC_ENGINE_H
+#define SEUTRAFFIC_ENGINE_H
 #include "flow/flow.h"
 #include "roadnet/roadnet.h"
 #include "utility/barrier.h"
@@ -163,3 +165,5 @@ namespace SEUTraffic{
     };
 
 }
+
+#endif //SEUTRAFFIC_ENGINE_H

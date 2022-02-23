@@ -58,4 +58,4 @@ namespace SEUTraffic{
         void reset();
     };
 }
-#endif
+#endif // SEUTRAFFIC_TRAFFICLIGHT_H
