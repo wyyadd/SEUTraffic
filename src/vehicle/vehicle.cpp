@@ -13,11 +13,11 @@ namespace SEUTraffic
     Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
         : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
         controllerInfo.dis = 0;
-        controllerInfo.drivable = vehicleInfo.getRouter().getFirstDrivable(); // 得到第一条Lane
         controllerInfo.running = true;
+        planned = vehicleInfo.getRouter().initRoutePlan();
+        controllerInfo.drivable = planned[0]; // 得到第一条Lane
         while (engine->checkPriority(priority = engine->rnd()));
         startTime = engine->getCurrentTime();
-        planned = vehicleInfo.getRouter().initRoutePlan();
     }
 
     Drivable* Vehicle::getCurDrivable() const

@@ -8,7 +8,7 @@ using namespace SEUTraffic;
 
 int main() {
     std::string configFile = "examples/config.json";
-    size_t totalStep = 200;
+    size_t totalStep = 1000;
 
     Engine engine(configFile, 8);
     time_t startTime, endTime;

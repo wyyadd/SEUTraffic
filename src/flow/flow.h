@@ -15,7 +15,7 @@ namespace SEUTraffic {
     class Flow {
     private:
         VehicleInfo vehicleTemplate;
-        std::shared_ptr<const Router> route;
+
         double interval;
         double nowTime = 0;//yzh：距离产生上一个车辆流的时间
         double currentTime = 0;//yzh:当前时间

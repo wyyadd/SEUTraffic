@@ -14,6 +14,7 @@ namespace SEUTraffic{
     class Intersection;
     class LaneLink;
     class Vehicle;
+    class Engine;
 
     class Router{
     private:
@@ -21,6 +22,7 @@ namespace SEUTraffic{
 
         // TODO 看之后用不用， 不用就删了
         std::vector<Intersection *> inters;
+
     public:
         Router(std::vector<Road *> roads, std::vector<Intersection *> inters);
 
@@ -32,9 +34,9 @@ namespace SEUTraffic{
 
         static LaneLink *selectLaneLink(const Lane *curLane, const std::vector<LaneLink*> &laneLinks) ;
 
-        Drivable *getFirstDrivable() const;
+        Drivable * getFirstDrivable();
 
-        Drivable* getNextDrivable(const Drivable *curDrivable, int curRoadIndex) const;
+        Drivable * getNextDrivable(const Drivable *curDrivable, int curRoadIndex);
 
         Road* getFirstRoad() const;
 

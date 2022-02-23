@@ -1,6 +1,6 @@
 {
 	"interval": 1.0,
-	"seed": 0,
+	"seed": 123,
 	"dir": "examples/",
 	"roadnetFile": "roadnet.json", 
 	"flowFile": "flow.json", 

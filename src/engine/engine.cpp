@@ -14,7 +14,7 @@
 #include "vehicle/vehicleInfo.h"
 
 namespace SEUTraffic {
-    // wyy modify: updataLog
+    // wyy modify: updateLog
     void Engine::updateLog() {
         std::string result;
         for (const Vehicle *vehicle: getRunningVehicles()) {
@@ -25,7 +25,7 @@ namespace SEUTraffic {
             result.append(
                     double2string(pos.x) + " " + double2string(pos.y) + " " +
                     double2string(atan2(direction.y, direction.x)) + " "
-                    + vehicle->getId() + " " + double2string(vehicle->getLen()) + " "
+                    + vehicle->getId() + " 0 " + double2string(vehicle->getLen()) + " "
                     + double2string(vehicle->getWidth()) + ",");
         }
         result.append(";");

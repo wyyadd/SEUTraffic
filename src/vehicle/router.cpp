@@ -7,7 +7,8 @@
 
 namespace SEUTraffic {
     Router::Router(std::vector<Road *> roads, std::vector<Intersection *> inters)
-            : route(std::move(roads)), inters(std::move(inters)) {
+            : route(std::move(roads)),inters(std::move(inters)){
+        srand((unsigned)time(nullptr));
     }
 
     std::vector<Drivable*> Router::initRoutePlan() {
@@ -20,7 +21,7 @@ namespace SEUTraffic {
         return planned;
     }
 
-    Drivable *Router::getFirstDrivable() const {
+    Drivable * Router::getFirstDrivable() {
         const std::vector<Lane *> &lanes = route[0]->getLanePointers();
         if (route.size() == 1) {
             return selectLane(nullptr, lanes);
@@ -36,7 +37,7 @@ namespace SEUTraffic {
         }
     }
 
-    Drivable *Router::getNextDrivable(const Drivable *curDrivable, int curRoadIndex) const {
+    Drivable * Router::getNextDrivable(const Drivable *curDrivable, int curRoadIndex) {
         if (curDrivable->isLaneLink()) {
             return dynamic_cast<const LaneLink *>(curDrivable)->getEndLane();
         } else {
@@ -67,9 +68,9 @@ namespace SEUTraffic {
 
     size_t Router::selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) {
         assert(!lanes.empty());
-        time_t now = time(nullptr);
         if (curLane == nullptr) {
-            return now % lanes.size();
+            size_t index = random() % lanes.size();
+            return index;
         }
         int laneDiff = std::numeric_limits<int>::max();
         size_t selected = -1;
