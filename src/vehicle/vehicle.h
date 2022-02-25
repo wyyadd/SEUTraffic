@@ -112,12 +112,16 @@ namespace SEUTraffic{
 
         Drivable* getNextDrivable();
 
+        Drivable* getFormerDrivable();
+
         Intersection* getNextIntersection();
 
         Vehicle* getLeader() const
         {
             return controllerInfo.leader;
         }
+
+        bool hasSetDist() const { return buffer.isDisSet; }
 
         bool hasSetEnd() const { return buffer.isEndSet; }
 
