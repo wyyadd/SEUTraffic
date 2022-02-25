@@ -7,7 +7,7 @@
 using namespace SEUTraffic;
 
 int main() {
-    std::string configFile = "cityflow_config/syn_3x3/config.json";
+    std::string configFile = "examples/config.json";
     size_t totalStep = 1000;
 
     Engine engine(configFile, 8);
@@ -18,6 +18,7 @@ int main() {
         if(i % (totalStep/10) == 0)
             std::cout << "当前模拟进度" << 100*i/totalStep << "%" << std::endl;
     }
+    engine.logTrafficStatistics();
     time(&endTime);
     std::cout << "Total Step: " << totalStep << std::endl;
     std::cout << "Total Time: " << (endTime - startTime) << "s" << std::endl;

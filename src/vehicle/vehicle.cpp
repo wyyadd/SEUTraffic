@@ -57,8 +57,10 @@ namespace SEUTraffic
     {
         if (buffer.isEndSet) {
             controllerInfo.end = buffer.end;
-            if (buffer.end)
+            if (buffer.end) {
                 controllerInfo.running = false;
+                this->engine->addCumulativeTravelTime(endTime,startTime);
+            }
             else controllerInfo.running = true;
             buffer.isEndSet = false;
         }

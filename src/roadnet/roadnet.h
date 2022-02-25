@@ -44,7 +44,6 @@ namespace SEUTraffic{
         std::vector<Road *> roads;
         std::vector<RoadLink> roadLinks; // todo: why not use * here
         std::vector<LaneLink *> laneLinks;
-        // wyy modify: intersection add point
         Point point;
 
     public:

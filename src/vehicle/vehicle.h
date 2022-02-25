@@ -57,16 +57,15 @@ namespace SEUTraffic{
 
         std::string id;
 
-        int startTime;
+        double startTime;
 
         double endTime = -1;
 
         size_t priority;
 
-        // TODO: 有什么用
         bool stopped = false;
 
-        double totalDist = 0; // record for avg speed compute
+//        double totalDist = 0; // record for avg speed compute
 
         // wyy modify
         std::vector<Drivable* > planned;
@@ -130,7 +129,7 @@ namespace SEUTraffic{
             else return buffer.drivable;
         }
 
-        double getTotalDist() const { return totalDist; }
+//        double getTotalDist() const { return totalDist; }
 
         size_t getPriority() const { return priority; }
 
@@ -153,7 +152,7 @@ namespace SEUTraffic{
         }
 
 
-        void updateTotalDist(double dist) { totalDist = dist; }
+//        void updateTotalDist(double dist) { totalDist = dist; }
 
         double getEndTime() const
         {

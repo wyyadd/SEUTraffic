@@ -17,20 +17,20 @@ namespace SEUTraffic {
     // wyy modify: updateLog
     void Engine::updateLog() {
         std::string result;
-        for (const Vehicle *vehicle: getRunningVehicles()) {
+        for (const Vehicle *vehicle: getRunningVehicles(true)) {
             Point pos = vehicle->getPoint();
             Point direction = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
+            std::string direction_precision_2 = double2string(atan2(direction.y, direction.x));
+//            direction_precision_2 = direction_precision_2.substr(0, direction_precision_2.find('.') + 5);
 
             // 依次： x y 方位角 ID length width
             result.append(
                     double2string(pos.x) + " " + double2string(pos.y) + " " +
-                    double2string(atan2(direction.y, direction.x)) + " "
-                    + vehicle->getId() + " 0 " + double2string(vehicle->getLen()) + " "
+                    direction_precision_2 + " " + vehicle->getId() + " 0 " + double2string(vehicle->getLen()) + " "
                     + double2string(vehicle->getWidth()) + ",");
         }
         result.append(";");
 
-        // 什么用处, 我看了Replay.txt, 每条数据的这部分都是一样的
         // format: for every road, check every laneLink is "lightPhase available" in road's endIntersection
         for (Road &road: roadNet.getRoads()) {
             if (road.getEndIntersection()->isVirtualIntersection())
@@ -54,6 +54,13 @@ namespace SEUTraffic {
             result.append(",");
         }
         logOut << result << std::endl;
+        if (steps % 30 == 0) {
+            statistics.time.push_back((int) steps);
+            statistics.waitingVehicleCnt.push_back((int) getWaitingVehicleCount());
+            statistics.avgWaitingTime.push_back(cumulativeWaitingTime / totalVehicleCnt);
+            statistics.finishVehicleCnt.push_back(finishedVehicleCnt);
+            statistics.avgFinishTime.push_back(finishedVehicleCnt == 0 ? 0 : cumulativeTravelTime / finishedVehicleCnt);
+        }
     }
 
     Engine::Engine(const std::string &configFile, int threadNum) : threadNum(threadNum), startBarrier(threadNum + 1),
@@ -199,8 +206,8 @@ namespace SEUTraffic {
                 const auto &vehicle = getJsonMemberObject("vehicle", flow);
                 auto len = getJsonMember<double>("length", vehicle);
                 auto width = getJsonMember<double>("width", vehicle);
-                auto startTime = (int)getJsonMember<double>("startTime", flow, 0);
-                auto endTime = (int)getJsonMember<double>("endTime", flow, -1);
+                auto startTime = (int) getJsonMember<double>("startTime", flow, 0);
+                auto endTime = (int) getJsonMember<double>("endTime", flow, -1);
                 auto minGap = getJsonMember<double>("minGap", vehicle);
                 VehicleInfo vehicleInfo(len, width, minGap, router);
                 Flow newFlow(vehicleInfo,
@@ -251,20 +258,20 @@ namespace SEUTraffic {
             double currentDrivableLength = curDrivable->getLength();
 
             // current vehicle is leader in this drivable
+            bool stopFlag = false;
             if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
                 double remainDist = currentDrivableLength - maxPossibleDist;
                 if (nextDrivable == nullptr) {
                     // drive out of current drivable
                     if (remainDist < 0) {
                         vehicle->setEnd(true);
-                        vehicle->setStop(false);
                         vehicle->setEndTime(currentTime + remainDist / vehicle->getSpeed());
                         vehicle->setDrivable(nullptr);
+                        addCumulativeTravelTime(vehicle->getEndTime(), vehicle->getStartTime());
                         vehicleActiveCount--;
                         finishedVehicleCnt++;
                     } else { // still on this drivable
                         vehicle->setDis(maxPossibleDist);
-                        vehicle->setStop(false);
                     }
                 } else { // exist next drivable
                     auto next_leader = nextDrivable->getLastVehicle();
@@ -275,16 +282,14 @@ namespace SEUTraffic {
                         next_leader->getChangedDrivable() != nullptr) {
                         if (remainDist >= 0) {
                             vehicle->setDis(maxPossibleDist);
-                            vehicle->setStop(false);
                         } else {
                             // if red light then stop
                             if (canNotGo) {
                                 vehicle->setDis(currentDrivableLength);
-                                vehicle->setStop(true);
+                                stopFlag = true;
                             } else {
                                 vehicle->setDis(-remainDist);
                                 vehicle->setDrivable(nextDrivable);
-                                vehicle->setStop(false);
                             }
                         }
                         continue;
@@ -294,10 +299,9 @@ namespace SEUTraffic {
                     if (remainDist >= 0) { // still on this drivable
                         if (safe_distance >= 0 || (remainDist >= -safe_distance)) { // no overlap
                             vehicle->setDis(maxPossibleDist);
-                            vehicle->setStop(false);
                         } else { // overlap
                             vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                            vehicle->setStop(true);
+                            stopFlag = next_leader->isStopped();
                         }
                     } else { // less than 0 means will possibly change drivable
                         remainDist = -remainDist;
@@ -305,25 +309,26 @@ namespace SEUTraffic {
                             // if red light then stop
                             if (canNotGo) {
                                 vehicle->setDis(currentDrivableLength);
-                                vehicle->setStop(true);
+                                stopFlag = true;
                             } else {
                                 vehicle->setDis(remainDist);
                                 vehicle->setDrivable(nextDrivable);
-                                vehicle->setStop(false);
                             }
                         } else { // over lap
                             if (safe_distance >= 0) { // still can change drivable
                                 // if red light then stop
                                 if (canNotGo) {
                                     vehicle->setDis(currentDrivableLength);
+                                    stopFlag = true;
                                 } else {
                                     vehicle->setDis(safe_distance);
                                     vehicle->setDrivable(nextDrivable);
+                                    stopFlag = next_leader->isStopped();
                                 }
                             } else { // cannot change drivable
                                 vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
+                                stopFlag = next_leader->isStopped();
                             }
-                            vehicle->setStop(true);
                         }
                     }
                 }
@@ -331,12 +336,14 @@ namespace SEUTraffic {
                 vehicle->setDis(std::max(currentDist,
                                          std::min(maxPossibleDist,
                                                   leader->getBufferDist() - leader->getMinGap() - leader->getLen())));
-                vehicle->setStop(maxPossibleDist != vehicle->getBufferDist());
+                stopFlag = leader->isStopped();
             }
+            if (vehicle->isStopped() && stopFlag)
+                ++cumulativeWaitingTime;
+            vehicle->setStop(stopFlag);
         }
         updateLocationFlag = true;
         startBarrier.wait(); // 等运行完上述的逻辑后，让子线程对包含的vehicle进行删除换道操作
-//        endBarrier.wait(); // 等子线程的操作运行完之后，对包含的vehicle进行更新新道路操作push vehicle
         for (auto &vehiclePair: pushBuffer) {
             Vehicle *vehicle = vehiclePair.first;
             Drivable *drivable = vehicle->getChangedDrivable();
@@ -369,24 +376,6 @@ namespace SEUTraffic {
             threadUpdateLocation(drivables);
             threadUpdateAction(vehicles);
             threadUpdateLeaderAndGap(drivables);
-        }
-    }
-
-    void Engine::step(int interval, std::map<std::string, int> &actions) {
-        for (auto inter: roadNet.getIntersections()) {
-            std::string interId = inter.getId();
-            int phase = actions[interId];
-            inter.getTrafficLight().setPhase(phase);
-        }
-
-        for (int i = 0; i < interval; i++) { // 表示会保持当前的信号调度运行interval的时间
-            nextStep();
-        }
-    }
-
-    void Engine::step2(int interval) {
-        for (int i = 0; i < interval; i++) { // 表示会保持当前的信号调度运行interval的时间
-            nextStep();
         }
     }
 
@@ -426,8 +415,6 @@ namespace SEUTraffic {
         vehicle->setLeader(leader);
         vehicleActiveCount++;
         totalVehicleCnt++;
-//        if (pushToDrivable)
-//            ((Lane *) vehicle->getCurDrivable())->pushWaitingVehicle(vehicle);
     }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
@@ -547,7 +534,7 @@ namespace SEUTraffic {
         ret.reserve(vehicleActiveCount);
         for (const auto &vehiclePair: vehiclePool) {
             const Vehicle *vehicle = vehiclePair.second.first;
-            if ((vehicle->isStopped() && includeWaiting) || vehicle->isRunning()) {
+            if (vehicle->isRunning() || (vehicle->isStopped() && includeWaiting)) {
                 ret.emplace_back(vehicle);
             }
         }
@@ -583,6 +570,18 @@ namespace SEUTraffic {
             ret.emplace(lane->getId(), cnt);
         }
         return ret;
+    }
+
+    size_t Engine::getWaitingVehicleCount() const {
+        size_t ans = 0;
+        for (const Lane *lane: roadNet.getLanes()) {
+            for (Vehicle *vehicle: lane->getVehicles()) {
+                if (vehicle->isStopped()) {
+                    ++ans;
+                }
+            }
+        }
+        return ans;
     }
 
     std::map<std::string, std::vector<std::string>> Engine::getLaneVehicles() {
@@ -661,4 +660,60 @@ namespace SEUTraffic {
             rnd.seed(seed);
         }
     }
+
+
+    template<class T>
+    rapidjson::Value
+    Engine::Statistics::convertToStatistic(std::vector<T> &arr, rapidjson::MemoryPoolAllocator<> &allocator) {
+        rapidjson::Value jsonTemp(rapidjson::kArrayType);
+        for (auto i: arr) {
+            jsonTemp.PushBack(i, allocator);
+        }
+        return jsonTemp;
+    }
+
+    void Engine::logTrafficStatistics() {
+        if (statistics.time.empty())
+            std::cerr << "please simulate first then logTrafficStatistics" << std::endl;
+        jsonRoot.SetObject();
+        auto &allocator = jsonRoot.GetAllocator();
+        jsonRoot.AddMember("time", statistics.convertToStatistic(statistics.time, allocator), allocator);
+        jsonRoot.AddMember("waitingVehicleCnt", statistics.convertToStatistic(statistics.waitingVehicleCnt, allocator),
+                           allocator);
+        jsonRoot.AddMember("avgWaitingTime", statistics.convertToStatistic(statistics.avgWaitingTime, allocator),
+                           allocator);
+        jsonRoot.AddMember("finishVehicleCnt", statistics.convertToStatistic(statistics.finishVehicleCnt, allocator),
+                           allocator);
+        jsonRoot.AddMember("avgFinishTime", statistics.convertToStatistic(statistics.avgFinishTime, allocator),
+                           allocator);
+        // totalWaitingTime
+        rapidjson::Value totalWaitingTime;
+        totalWaitingTime.SetDouble(cumulativeWaitingTime);
+        jsonRoot.AddMember("totalWaitingTime",totalWaitingTime, allocator);
+        // totalAvgWaitingTime
+        rapidjson::Value totalAvgWaitingTime;
+        totalAvgWaitingTime.SetDouble(cumulativeWaitingTime/totalVehicleCnt);
+        jsonRoot.AddMember("totalAvgWaitingTime",totalAvgWaitingTime, allocator);
+        // totalFinishTime
+        rapidjson::Value totalFinishedVehicleTime;
+        totalFinishedVehicleTime.SetDouble(cumulativeTravelTime);
+        jsonRoot.AddMember("totalFinishedVehicleTime",totalFinishedVehicleTime, allocator);
+        // totalAvgFinishTime
+        rapidjson::Value totalAvgFinishVehicleTime;
+        totalAvgFinishVehicleTime.SetDouble(cumulativeTravelTime/finishedVehicleCnt);
+        jsonRoot.AddMember("totalAvgFinishedVehicleTime",totalAvgFinishVehicleTime, allocator);
+        // totalTime
+        rapidjson::Value totalTime;
+        totalTime.SetInt((int)steps);
+        jsonRoot.AddMember("totalTime",totalTime, allocator);
+        // totalFinishedVehicleCnt
+        rapidjson::Value totalFinishVehicleCnt;
+        totalFinishVehicleCnt.SetInt(finishedVehicleCnt);
+        jsonRoot.AddMember("totalFinishedVehicleCnt",totalFinishVehicleCnt, allocator);
+
+        if (!writeJsonToFile(dir + "replay_statistics.json", jsonRoot)) {
+            std::cerr << "write statistics log file error" << std::endl;
+        }
+    }
+
 }
