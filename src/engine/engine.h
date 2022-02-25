@@ -165,6 +165,8 @@ namespace SEUTraffic{
         std::string getLeader(const std::string &vehicleId) const;
 
         void logTrafficStatistics();
+
+        void handleWaiting();
     };
 }
 

@@ -227,7 +227,7 @@ namespace SEUTraffic{
     private:
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
-//        std::deque<Vehicle *> waitingBuffer;
+        std::deque<Vehicle *> waitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
 
     public:
@@ -266,13 +266,13 @@ namespace SEUTraffic{
         std::vector<LaneLink *> &getLaneLinks() { return this->laneLinks; }
 
         /* waiting buffer */
-//        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
+        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
 
-//        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
+        std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
 
-//        void pushWaitingVehicle(Vehicle *vehicle) {
-//            waitingBuffer.emplace_back(vehicle);
-//        }
+        void pushWaitingVehicle(Vehicle *vehicle) {
+            waitingBuffer.emplace_back(vehicle);
+        }
     };
 
     class LaneLink : public Drivable {

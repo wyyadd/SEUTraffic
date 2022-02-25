@@ -12,8 +12,7 @@ namespace SEUTraffic
 
     Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
         : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
-        controllerInfo.dis = 0;
-        controllerInfo.running = true;
+//        controllerInfo.running = true;
         planned = vehicleInfo.getRouter().initRoutePlan();
         controllerInfo.drivable = planned[0]; // 得到第一条Lane
         while (engine->checkPriority(priority = engine->rnd()));
