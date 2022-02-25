@@ -69,7 +69,7 @@ namespace SEUTraffic {
     size_t Router::selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) {
         assert(!lanes.empty());
         if (curLane == nullptr) {
-            size_t index = random() % lanes.size();
+            size_t index = rand() % lanes.size();
             return index;
         }
         int laneDiff = std::numeric_limits<int>::max();

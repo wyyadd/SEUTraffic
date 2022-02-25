@@ -410,6 +410,51 @@ namespace SEUTraffic{
         return jsonRoot;
     }
 
+    int Intersection::getMaxpressurePhase() {
+        double maxPressure = -0x3f3f3f;
+        double incomings = 0;
+        double outcomings = 0;
+        int bestPhaseIndex = 0;
+
+        for (LightPhase phase : trafficLight.getPhases()) {
+            incomings = 0;
+            outcomings = 0;
+            std::vector<bool> roadLinkAvailable = phase.getRoadLinkAvailable();
+            std::set<Lane*> startLanes;
+            std::set<Lane*> endLanes;
+
+            for (RoadLink rlink : roadLinks) { // 这里的逻辑写错了
+                if (roadLinkAvailable[rlink.getIndex()]) {
+                    for (auto& lanelink : rlink.getLaneLinks()) {
+                        Lane* stlane = lanelink.getStartLane();
+                        Lane* edlane = lanelink.getEndLane();
+                        startLanes.insert(stlane);
+                        endLanes.insert(edlane);
+                    }
+                }
+            }
+
+            for (auto stLane : startLanes) {
+                int incomingCars = stLane->getVehicleCnt();
+                incomings += incomingCars;
+            }
+
+            for (auto edLane: endLanes) {
+                int outcomingcars = edLane->getVehicleCnt();
+                outcomings += outcomingcars;
+            }
+            double pressure = incomings - outcomings;
+
+            if (pressure > maxPressure) {
+                maxPressure = pressure;
+                bestPhaseIndex = phase.getPhaseIndex();
+            }
+            startLanes.clear();
+            endLanes.clear();
+        }
+        return bestPhaseIndex;
+    }
+
     void RoadNet::reset()
     {
         for (auto &road : roads)  road.reset();
@@ -677,73 +722,6 @@ namespace SEUTraffic{
         std::cerr << "inter id = " + id << std::endl;
 
         throw  "the roadlink doest match the inter's roadlink. inter id = " + id + " last rlink is " + startRoad->getId() + " next rlink " + endRoad->getId();
-    }
-
-    int Intersection::getMaxpressurePhase(bool isdebug)
-    {
-        double maxPressure = -0x3f3f3f;
-        double incomings = 0;
-        double outcomings = 0;
-        int bestPhaseIndex = 0;
-        for (LightPhase phase : trafficLight.getPhases()) {
-            incomings = 0;
-            outcomings = 0;
-            std::vector<bool> roadLinkAvailable = phase.getRoadLinkAvailable();
-            std::set<Lane *> startLanes;
-            std::set<Lane*> endLanes;
-
-            if (getId() == "intersection_3_1" && isdebug) {
-                std::cerr <<"inter 3_1, phase " << phase.getPhaseIndex() << " ok rlink: ";
-                for (int i = 0; i < roadLinkAvailable.size(); i++) {
-                    bool ok = roadLinkAvailable[i];
-                    if (ok ==true)
-                        std::cerr << i <<" ";
-                }
-                std::cerr<<std::endl;
-            }
-            for (RoadLink rlink : roadLinks) { // 这里的逻辑写错了
-                if (roadLinkAvailable[rlink.getIndex()]) {
-                    for (auto& lanelink : rlink.getLaneLinks()) {
-                        Lane* stlane = lanelink.getStartLane();
-                        Lane* edlane = lanelink.getEndLane();
-                        startLanes.insert(stlane);
-                        endLanes.insert(edlane);
-                    }
-                }
-            }
-
-            for (auto stLane : startLanes) {
-                int incomingCars = stLane->getVehicleCnt();
-                if (getId() == "intersection_3_1" && isdebug) {
-                    Road* stRoad = stLane->getBelongRoad();
-                    // comment: to see more details
-                    std::cerr <<"phase = " << phase.getPhaseIndex() <<" inter = " << getId() <<" road = " << stRoad->getId() << " incoming lane " << stLane->getId() << " car cnt = " << incomingCars<< std::endl;
-                }
-                incomings += incomingCars;
-            }
-            for (auto edLane: endLanes) {
-                int outcomingcars = edLane->getVehicleCnt();
-                if (getId() == "intersection_3_1" && isdebug) {
-                    Road *edRoad = edLane->getBelongRoad();
-                    std::cerr <<"phase = " << phase.getPhaseIndex() <<" inter = " << getId() <<" road = " << edRoad->getId() << " outcoming lane " << edLane->getId() << " car cnt = " <<  outcomingcars << std::endl;
-                }
-                outcomings += outcomingcars;
-            }
-            double pressure = incomings - outcomings;
-
-            if (getId() == "intersection_3_1" && isdebug) {
-                std::cerr <<" inter id = " << getId() << " phase = " << phase.getPhaseIndex() << ", pressure = " << pressure <<std::endl;
-            }
-            if (maxPressure < pressure) {
-                maxPressure = pressure;
-                bestPhaseIndex = phase.getPhaseIndex();
-            }
-            startLanes.clear();
-            endLanes.clear();
-        }
-        if (isdebug)
-            std::cerr<< "inter id = " << getId() << " max pressure = " << maxPressure << " signal = " << bestPhaseIndex << std::endl;
-        return bestPhaseIndex;
     }
 
     double Road::getWidth() const{

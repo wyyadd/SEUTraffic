@@ -33,8 +33,20 @@ namespace  SEUTraffic
         }
     }
 
+    bool TrafficLight::changePhase(double seconds){
+        if(intersection->isVirtual)
+            return false;
+
+        remainDuration -= seconds;
+        if(remainDuration <= 0.0)
+            return true;
+        else
+            return false;
+    }
+
     void TrafficLight::setPhase(int phaseIndex){
         this->curPhaseIndex = phaseIndex;
+        this->remainDuration = phases[phaseIndex].time;
     }
 
     void TrafficLight::reset(){

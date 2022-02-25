@@ -53,6 +53,8 @@ namespace SEUTraffic{
 
         void passTime(double seconds);
 
+        bool changePhase(double seconds);//yzh:经过seconds时间，当前Intersection的TrafficLight是否会改变相位
+
         void setPhase(int phaseIndex);
 
         void reset();
