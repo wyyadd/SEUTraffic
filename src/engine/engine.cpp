@@ -379,10 +379,34 @@ namespace SEUTraffic {
         }
     }
 
+    //yzh:处理waitingBuffer中的车辆
+    void Engine::handleWaiting() {
+        for (Lane *lane : roadNet.getLanes()) {
+            //yzh:waitingBuffer中存放的是新产生的车辆流，firstLane为当前lane
+            auto &buffer = lane->getWaitingBuffer();
+            if (buffer.empty()) continue;
+            auto &vehicle = buffer.front();
+            //yzh:将available的车辆push进相应lane的vehicles
+            if (lane->available(vehicle)) {
+                vehicle->setRunning(true);
+                vehicleActiveCount++;
+                finishedVehicleCnt++;
+                Vehicle * tail = lane->getLastVehicle();
+                lane->pushVehicle(vehicle);
+                vehicle->updateLeaderAndGap(tail);
+                buffer.pop_front();
+            }
+        }
+    }
+
     void Engine::nextStep(bool fixedTimeTraffic) {
         for (auto &flow: flows) {
             flow.nextStep(interval);
         }
+
+        //处理waitingBuffer中的车辆,即新产生的车辆流
+        handleWaiting();
+
         getAction();
         updateLocation();
         updateAction();
@@ -426,11 +450,6 @@ namespace SEUTraffic {
         vehicleMap.emplace(vehicle->getId(), vehicle);
         threadVehiclePool[threadIndex].insert(vehicle);
 
-        auto leader = vehicle->getCurDrivable()->getLastVehicle();
-        vehicle->getCurDrivable()->pushVehicle(vehicle); // 道路加入车流
-        vehicle->setLeader(leader);
-        vehicleActiveCount++;
-        totalVehicleCnt++;
     }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中

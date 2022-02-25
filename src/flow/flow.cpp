@@ -11,11 +11,13 @@ namespace SEUTraffic {
             //yzh:当nowTime大于车辆流的产生间隔，产生新的车辆
             while (nowTime >= interval) {
                 auto vehicle = new Vehicle(vehicleTemplate, id + "_" + std::to_string(cnt++), engine, this);
-                //yzh:确保vehicle的priority唯一
+
                 //yzh:将vehicle放进VehiclePool、VehicleMap、threadVehiclePool
                 engine->pushVehicle(vehicle, false);
-                //yzh:将vehicle放入FirstRoad的planRouteBuffer中
-//                vehicle->getFirstRoad()->addPlanRouteVehicle(vehicle);
+
+                //将vehicle push进FirstLane的waitingBuffer
+                vehicle->getCurLane()->pushWaitingVehicle(vehicle);
+
                 nowTime -= interval;
             }
             nowTime += timeInterval;

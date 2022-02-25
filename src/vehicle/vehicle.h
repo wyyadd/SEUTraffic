@@ -83,6 +83,8 @@ namespace SEUTraffic{
 
         bool isRunning() const { return controllerInfo.running; }
 
+        void setRunning(bool running) { controllerInfo.running = running; }
+
         double getStartTime() const { return startTime; }
 
         inline double getDistance() const { return controllerInfo.dis; }
