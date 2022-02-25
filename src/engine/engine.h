@@ -36,21 +36,29 @@ namespace SEUTraffic{
         int totalVehicleCnt = 0;
         int currentTime;
         double cumulativeTravelTime = 0;
-        std::set<Vehicle *> vehicleRemoveBuffer;
-        // wyy modify: jsonroot to log
+        double cumulativeWaitingTime = 0;
+        // wyy modify: jsonRoot to log
         rapidjson::Document jsonRoot;
         std::vector<std::thread> threadPool; // 线程池
         bool finished = false;
         Barrier startBarrier, endBarrier;
         std::string dir;
-        double avgSpeedSum  = 0;
         bool rlTrafficLight;
         int seed;
         std::mutex lock;
 
         // wyy modify: logout
         std::ofstream logOut;
-        void setLogFile(const std::string &jsonFile, const std::string &logFile);
+        struct Statistics{
+           std::vector<int> time;
+           std::vector<int> waitingVehicleCnt;
+           std::vector<double> avgWaitingTime;
+           std::vector<int> finishVehicleCnt;
+           std::vector<double> avgFinishTime;
+
+           template<class T>
+           rapidjson::Value convertToStatistic(std::vector<T>& arr,rapidjson::Document::AllocatorType &allocator);
+        } statistics;
 
     private:
         void vehicleControl(Vehicle &vehicle);
@@ -75,7 +83,7 @@ namespace SEUTraffic{
         // wyy modify: update log
         void updateLog();
 
-
+        void setLogFile(const std::string &jsonFile, const std::string &logFile);
     public:
         std::mt19937 rnd;
 
@@ -89,13 +97,9 @@ namespace SEUTraffic{
 
         void nextStep();
 
-        void step2(int interval);
-
-        void step(int interval, std::map<std::string, int>& actions);
-
         bool checkPriority(size_t priority);
 
-        void pushVehicle(Vehicle *const vehicle, bool pushToDrivable = true);
+        void pushVehicle(Vehicle *vehicle, bool pushToDrivable = true);
 
         void threadGetAction(std::set<Vehicle*>& vehicles);
 
@@ -107,17 +111,17 @@ namespace SEUTraffic{
 
         double getAverageTravelTime();
 
-        int getSteps()
+        size_t getSteps() const
         {
             return steps;
         }
 
-        int getCurrentTime()
+        int getCurrentTime() const
         {
             return currentTime;
         }
 
-        int getActiveCars()
+        int getActiveCars() const
         {
             return vehicleActiveCount;
         }
@@ -144,6 +148,8 @@ namespace SEUTraffic{
 
         std::map<std::string, int> getLaneWaitingVehicleCount() const;
 
+        size_t getWaitingVehicleCount() const;
+
         std::map<std::string, double> getVehicleSpeed() const;
 
         std::map<std::string, double> getVehicleDistance() const;
@@ -154,16 +160,12 @@ namespace SEUTraffic{
 
         void reset(bool resetRnd = false);
 
-        void addCumulativeTravelTime(double startTime, double endTime);
-
-        int getTotalCars() // contain both active and finished car cnt
-        {
-            return vehicleActiveCount + finishedVehicleCnt;
-        }
+        void addCumulativeTravelTime(double endTime, double startTime);
 
         std::string getLeader(const std::string &vehicleId) const;
-    };
 
+        void logTrafficStatistics();
+    };
 }
 
 #endif //SEUTRAFFIC_ENGINE_H

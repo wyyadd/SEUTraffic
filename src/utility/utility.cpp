@@ -41,6 +41,7 @@ namespace SEUTraffic
         char writeBuffer[JSON_BUFFER_SIZE];
         rapidjson::FileWriteStream os(fp, writeBuffer, sizeof(writeBuffer));
         rapidjson::Writer<rapidjson::FileWriteStream> writer(os);
+        writer.SetMaxDecimalPlaces(2);
         document.Accept(writer);
         fclose(fp);
         return true;
