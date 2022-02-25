@@ -379,7 +379,7 @@ namespace SEUTraffic {
         }
     }
 
-    void Engine::nextStep() {
+    void Engine::nextStep(bool fixedTimeTraffic) {
         for (auto &flow: flows) {
             flow.nextStep(interval);
         }
@@ -390,8 +390,24 @@ namespace SEUTraffic {
 
         // update traffic light
         std::vector<Intersection> &intersections = roadNet.getIntersections();
-        for (auto &intersection: intersections)
-            intersection.getTrafficLight().passTime(interval);
+        for (auto &intersection: intersections) {
+            if(intersection.isVirtualIntersection())
+                continue;
+            //yzh: TSC:固定时长
+            if(fixedTimeTraffic)
+                intersection.getTrafficLight().passTime(interval);
+                //yzh: TSC：maxPressure算法
+            else{
+                if(!intersection.getTrafficLight().changePhase(interval)) {
+                    intersection.getTrafficLight().passTime(interval);
+                }
+                else {
+                    int bestPhase = intersection.getMaxpressurePhase();
+                    std::cout<<"bestPhase: "<<bestPhase<<std::endl;
+                    intersection.getTrafficLight().setPhase(bestPhase);
+                }
+            }
+        }
 
         steps += 1;
         currentTime += 1;

@@ -95,7 +95,7 @@ namespace SEUTraffic{
 
         bool loadConfig(const std::string& configFile);
 
-        void nextStep();
+        void nextStep(bool fixedTimeTraffic);
 
         bool checkPriority(size_t priority);
 

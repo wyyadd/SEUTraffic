@@ -69,7 +69,7 @@ namespace SEUTraffic{
 
         RoadLink getRoadLink(Road* lastRoad, Road* curRoad);
 
-        int getMaxpressurePhase(bool isdebug);
+        int getMaxpressurePhase();
 
         bool isImplicitIntersection() {return trafficLight.getPhases().size() <= 1;}
 
