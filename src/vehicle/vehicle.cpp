@@ -13,6 +13,7 @@ namespace SEUTraffic
     Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
         : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
 //        controllerInfo.running = true;
+        controllerInfo.dis = 0;
         planned = vehicleInfo.getRouter().initRoutePlan();
         controllerInfo.drivable = planned[0]; // 得到第一条Lane
         while (engine->checkPriority(priority = engine->rnd()));
@@ -30,6 +31,12 @@ namespace SEUTraffic
         if (i < this->planned.size()) {
             return planned[i];
         } else return nullptr;
+    }
+
+    Drivable *Vehicle::getFormerDrivable() {
+        if(currentDrivableIndex == 0)
+            return nullptr;
+        return planned[currentDrivableIndex-1];
     }
 
     Intersection* Vehicle::getNextIntersection()
@@ -148,4 +155,5 @@ namespace SEUTraffic
         if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
         else return nullptr;
     }
+
 }
