@@ -11,7 +11,7 @@
 1. 重叠问题： 当多条lane进入同一条lane时，可能会因为拥堵产生重叠问题。  
 解决思路：
     - 后端优化碰撞检测逻辑(完成）
-    - 后端增加pushBuffer功能， 当车道车辆已满时， 将新增车辆存入pushBuffer中(完成)
+    - 后端增加waitingBuffer功能， 当车道车辆已满时， 将新增车辆存入waitingBuffer中(完成)
     - 后端与前端优化车辆渲染与车辆坐标问题。(待完成)
 ![重叠问题](https://github.com/wyyadd/SEUTraffic/blob/main/img/overlap.png)
 2. 跨道问题： 在十字路口处， 若laneLink与lane重叠且信号灯能同时放行的话， 直行的车与拐弯的车会发生重叠现象，不会触发碰撞检测。
