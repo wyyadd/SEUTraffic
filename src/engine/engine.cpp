@@ -708,7 +708,6 @@ namespace SEUTraffic {
         }
     }
 
-
     template<class T>
     rapidjson::Value
     Engine::Statistics::convertToStatistic(std::vector<T> &arr, rapidjson::MemoryPoolAllocator<> &allocator) {
