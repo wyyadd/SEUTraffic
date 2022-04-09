@@ -13,7 +13,7 @@
 #include <queue>
 #include <iostream>
 
-namespace SEUTraffic{
+namespace SEUTraffic {
     class RoadNet;
 
     class Intersection;
@@ -47,7 +47,7 @@ namespace SEUTraffic{
         Point point;
 
     public:
-        std::string getId() const {return this->id;}
+        std::string getId() const { return this->id; }
 
         const TrafficLight &getTrafficLight() const { return trafficLight; }
 
@@ -67,11 +67,11 @@ namespace SEUTraffic{
 
         void reset();
 
-        RoadLink getRoadLink(Road* lastRoad, Road* curRoad);
+        RoadLink getRoadLink(Road *lastRoad, Road *curRoad);
 
         int getMaxpressurePhase();
 
-        bool isImplicitIntersection() {return trafficLight.getPhases().size() <= 1;}
+        bool isImplicitIntersection() { return trafficLight.getPhases().size() <= 1; }
 
         // wyy modify: log
         std::vector<Point> getOutline();//yzh:获取Intersection的外轮廓点的坐标
@@ -80,7 +80,7 @@ namespace SEUTraffic{
 
     };
 
-    class Road{
+    class Road {
         friend class RoadNet;
 
         friend class Lane;
@@ -90,14 +90,15 @@ namespace SEUTraffic{
         Intersection *startIntersection = nullptr;
         Intersection *endIntersection = nullptr;
         std::vector<Lane> lanes;
-        std::vector<Lane*> lanePointers;
+        std::vector<Lane *> lanePointers;
         // wyy modify: add points
         std::vector<Point> points;
+
         void initLanesPoints();//yzh:根据road坐标计算lane坐标
     public:
         std::string getId() const { return id; }
 
-        Intersection *getStartIntersection() {return this->startIntersection; }
+        Intersection *getStartIntersection() { return this->startIntersection; }
 
         Intersection *getEndIntersection() { return this->endIntersection; }
 
@@ -109,13 +110,13 @@ namespace SEUTraffic{
 
         double getLength() const;
 
-        const std::vector<Lane *> & getLanePointers();
+        const std::vector<Lane *> &getLanePointers();
 
         // wyy modify: log
         double averageLength() const;
     };
 
-    enum RoadLinkType{
+    enum RoadLinkType {
         go_straight = 3, turn_left = 2, turn_right = 1
     };
 
@@ -133,23 +134,22 @@ namespace SEUTraffic{
         std::vector<LaneLink *> laneLinkPointers;
         int index;
     public:
-        const std::vector<LaneLink> &getLaneLinks() const {return this->laneLinks; }
+        const std::vector<LaneLink> &getLaneLinks() const { return this->laneLinks; }
 
         std::vector<LaneLink> &getLaneLinks() { return this->laneLinks; }
 
         std::vector<LaneLink *> &getLaneLinkPointers();
 
-        Road *getStartRoad() const {return this->startRoad; }
+        Road *getStartRoad() const { return this->startRoad; }
 
         Road *getEndRoad() const { return this->endRoad; }
 
-        bool isAvailable() const
-        {
+        bool isAvailable() const {
             return this->intersection->trafficLight.getCurrentPhase().roadLinkAvailable[this->index];
         }
 
         bool isTurn() const {
-            return this-> type == turn_left || type == turn_right;
+            return this->type == turn_left || type == turn_right;
         }
 
         void reset();
@@ -158,11 +158,12 @@ namespace SEUTraffic{
 
     };
 
-    class Drivable{
+    class Drivable {
         friend class RoadNet;
+
     public:
         enum DrivableType {
-            LANE = 0, LANELINK  = 1
+            LANE = 0, LANELINK = 1
         };
 
     protected:
@@ -179,7 +180,7 @@ namespace SEUTraffic{
 
         const std::list<Vehicle *> &getVehicles() const { return vehicles; }
 
-        std::list<Vehicle *> &getVehicles() {return vehicles;}
+        std::list<Vehicle *> &getVehicles() { return vehicles; }
 
         double getLength() const { return length; }
 
@@ -191,7 +192,7 @@ namespace SEUTraffic{
 
         bool isLane() const { return drivableType == LANE; }
 
-        bool isLaneLink() const { return drivableType == LANELINK;}
+        bool isLaneLink() const { return drivableType == LANELINK; }
 
         Vehicle *getFirstVehicle() const {
             if (!vehicles.empty()) return vehicles.front();
@@ -203,11 +204,11 @@ namespace SEUTraffic{
             return nullptr;
         }
 
-        void pushVehicle(Vehicle *vehicle){
+        void pushVehicle(Vehicle *vehicle) {
             vehicles.push_back(vehicle);
         }
 
-        void popVehicle(){ vehicles.pop_front(); }
+        void popVehicle() { vehicles.pop_back(); }
 
         virtual std::string getId() const = 0;
 
@@ -219,9 +220,10 @@ namespace SEUTraffic{
         Point getDirectionByDistance(double dis) const;
     };
 
-    class Lane : public Drivable{
+    class Lane : public Drivable {
 
         friend class RoadNet;
+
         friend class Road;
 
     private:
@@ -235,7 +237,7 @@ namespace SEUTraffic{
 
         Lane(double width, double maxSpeed, int laneIndex, Road *belongRoad);
 
-        std::string getId() const override{
+        std::string getId() const override {
             return belongRoad->getId() + '_' + std::to_string(getLaneIndex());
         }
 
@@ -245,7 +247,7 @@ namespace SEUTraffic{
 
         bool canEnter(const Vehicle *vehicle) const;
 
-        size_t getLaneIndex() const {return this-> laneIndex; }
+        size_t getLaneIndex() const { return this->laneIndex; }
 
         Intersection *getStartIntersection() const {
             return belongRoad->startIntersection;
@@ -284,17 +286,16 @@ namespace SEUTraffic{
     private:
         RoadLink *roadLink = nullptr;
         Lane *startLane = nullptr;
-        Lane* endLane = nullptr;
+        Lane *endLane = nullptr;
 
     public:
-        std::string getId() const override
-        {
+        std::string getId() const override {
             return (startLane ? startLane->getId() : "") + "_TO_" + (endLane ? endLane->getId() : "");
         }
 
         Lane *getStartLane() const { return startLane; }
 
-        Lane* getEndLane() const { return endLane; }
+        Lane *getEndLane() const { return endLane; }
 
         // wyy modify: lanelink avaliable
         // yzh：laneLink可用 与 roadLink可用 等价？？？
@@ -315,6 +316,7 @@ namespace SEUTraffic{
 
         bool isTurn() const { return roadLink->isTurn(); }
 
+        Intersection *getIntersection() const {return this->roadLink->intersection;}
     };
 
     class RoadNet {
@@ -327,27 +329,26 @@ namespace SEUTraffic{
 
         std::vector<Lane *> lanes;
         std::vector<LaneLink *> laneLinks;
-        std::vector<Drivable*> drivables;
+        std::vector<Drivable *> drivables;
         std::vector<std::string> interIds;
 
         // wyy modify: get Points
         static Point getPoint(const Point &p1, const Point &p2, double a);
 
     public:
-        bool loadFromJson(const std::string& jsonFileName);
+        bool loadFromJson(const std::string &jsonFileName);
 
         rapidjson::Value convertToJson(rapidjson::Document::AllocatorType &allocator);
 
         std::vector<Road> &getRoads() { return this->roads; }
 
-        std::vector<Intersection>&getIntersections() { return this-> intersections; }
+        std::vector<Intersection> &getIntersections() { return this->intersections; }
 
-        const std::vector<Drivable*> &getDrivables() const {
+        const std::vector<Drivable *> &getDrivables() const {
             return drivables;
         }
 
-        const std::vector<Lane *> &getLanes() const
-        {
+        const std::vector<Lane *> &getLanes() const {
             return lanes;
         }
 
@@ -361,8 +362,7 @@ namespace SEUTraffic{
             return roadMap.count(id) > 0 ? roadMap.at(id) : nullptr;
         }
 
-        Intersection* getIntersectionById(std::string id)
-        {
+        Intersection *getIntersectionById(std::string id) {
             return interMap.count(id) > 0 ? interMap.at(id) : nullptr;
         }
 
@@ -370,8 +370,7 @@ namespace SEUTraffic{
             return drivableMap.count(id) > 0 ? drivableMap.at(id) : nullptr;
         }
 
-        std::vector<std::string> getInterIds()
-        {
+        std::vector<std::string> getInterIds() {
             return this->interIds;
         }
     };

@@ -10,7 +10,7 @@
 #include "vehicle/vehicleInfo.h"
 
 
-namespace SEUTraffic{
+namespace SEUTraffic {
     class Lane;
 
     class LaneLink;
@@ -23,7 +23,7 @@ namespace SEUTraffic{
 
     class Flow;
 
-    class Vehicle{
+    class Vehicle {
         friend class Router;
 
     private:
@@ -32,15 +32,15 @@ namespace SEUTraffic{
             bool isDrivableSet = false;
             bool isEndSet = false;
 //            double deltaDist;
-            Drivable* drivable;
+            Drivable *drivable;
             double speed;
             bool end = false;
             double dis;
         };
 
-        struct ControllerInfo{
+        struct ControllerInfo {
             double dis = 0;
-            Drivable* drivable = nullptr;
+            Drivable *drivable = nullptr;
 //            double gap;
             Vehicle *leader = nullptr;
             bool running = false;
@@ -51,7 +51,7 @@ namespace SEUTraffic{
 
         ControllerInfo controllerInfo;
 
-        Engine* engine;
+        Engine *engine;
 
         VehicleInfo vehicleInfo;
 
@@ -68,7 +68,7 @@ namespace SEUTraffic{
 //        double totalDist = 0; // record for avg speed compute
 
         // wyy modify
-        std::vector<Drivable* > planned;
+        std::vector<Drivable *> planned;
         int currentDrivableIndex = 0;
 
         Flow *flow;
@@ -76,7 +76,7 @@ namespace SEUTraffic{
     public:
         Vehicle(const VehicleInfo &init, std::string id, Engine *engine, Flow *flow = nullptr);
 
-        void setDis(double dis){
+        void setDis(double dis) {
             buffer.dis = dis;
             buffer.isDisSet = true;
         }
@@ -89,8 +89,7 @@ namespace SEUTraffic{
 
         inline double getDistance() const { return controllerInfo.dis; }
 
-        double getBufferDist() const
-        {
+        double getBufferDist() const {
             if (buffer.isDisSet)
                 return buffer.dis;
             else return this->getDistance();
@@ -102,22 +101,21 @@ namespace SEUTraffic{
 
         double getWidth() const { return vehicleInfo.getWidth(); }
 
-        double getSpeed() const { return vehicleInfo.getSpeed();}
+        double getSpeed() const { return vehicleInfo.getSpeed(); }
 
         std::string getId() const { return id; }
 
-        Drivable* getCurDrivable() const;
+        Drivable *getCurDrivable() const;
 
-        void setLeader(Vehicle* leaderCar); // 设置leader
+        void setLeader(Vehicle *leaderCar); // 设置leader
 
-        Drivable* getNextDrivable();
+        Drivable *getNextDrivable();
 
-        Drivable* getFormerDrivable();
+        Drivable *getFormerDrivable();
 
-        Intersection* getNextIntersection();
+        Intersection *getNextIntersection();
 
-        Vehicle* getLeader() const
-        {
+        Vehicle *getLeader() const {
             return controllerInfo.leader;
         }
 
@@ -127,64 +125,60 @@ namespace SEUTraffic{
 
         bool hasSetDrivable() const { return buffer.isDrivableSet; }
 
-        Drivable* getChangedDrivable() const
-        {
+        Drivable *getChangedDrivable() const {
             if (!buffer.isDrivableSet) {
                 return nullptr;
-            }
-            else return buffer.drivable;
+            } else return buffer.drivable;
         }
 
 //        double getTotalDist() const { return totalDist; }
 
         size_t getPriority() const { return priority; }
 
-        void setEnd(bool end)
-        {
+        void setEnd(bool end) {
             buffer.end = end;
             buffer.isEndSet = true;
         }
 
         void setPriority(size_t pri) { this->priority = pri; }
 
-        void setStop(bool stop)
-        {
+        void setStop(bool stop) {
             stopped = stop;
         }
 
-        void setEndTime(double newEndTime)
-        {
+        void setEndTime(double newEndTime) {
             this->endTime = newEndTime;
         }
 
-
 //        void updateTotalDist(double dist) { totalDist = dist; }
 
-        double getEndTime() const
-        {
+        double getEndTime() const {
             return endTime;
         }
 
-        void setDrivable(Drivable* drivable)
-        {
+        void setDrivable(Drivable *drivable) {
             buffer.drivable = drivable;
             buffer.isDrivableSet = true;
             ++currentDrivableIndex;
         }
 
-        bool hasSetStop() const
-        {
+        void unsetDrivable(){
+            buffer.drivable = nullptr;
+            buffer.isDrivableSet = false;
+            --currentDrivableIndex;
+        }
+
+        bool hasSetStop() const {
             return stopped;
         }
 
-        bool isStopped() const
-        {
+        bool isStopped() const {
             return stopped;
         }
 
         void update();
 
-        void updateLeaderAndGap(Vehicle* leader);
+        void updateLeaderAndGap(Vehicle *leader);
 
         std::map<std::string, std::string> getInfo() const;
 
@@ -192,7 +186,9 @@ namespace SEUTraffic{
         Point getPoint() const;
 
         //yzh modify
-        Lane * getCurLane() const;
+        Lane *getCurLane() const;
+
+        bool ifCrash(Vehicle *) const;
 
     };
 }

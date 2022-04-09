@@ -8,14 +8,14 @@
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 
-namespace SEUTraffic
-{
+namespace SEUTraffic {
     class Road;
+
     class Lane;
 
-    bool readJsonFromFile(const std::string &filename, rapidjson::Document &document){
+    bool readJsonFromFile(const std::string &filename, rapidjson::Document &document) {
         FILE *fp = fopen(filename.c_str(), "r");
-        if (!fp){
+        if (!fp) {
             return false;
         }
         char readBuffer[JSON_BUFFER_SIZE];
@@ -47,10 +47,10 @@ namespace SEUTraffic
         return true;
     }
 
-    const rapidjson::Value &getJsonMemberValue(const std::string &name, const rapidjson::Value &object){
+    const rapidjson::Value &getJsonMemberValue(const std::string &name, const rapidjson::Value &object) {
         assert(object.IsObject());
         auto iter = object.FindMember(name.c_str());
-        if (iter == object.MemberEnd()){
+        if (iter == object.MemberEnd()) {
             throw JsonMemberMiss(name);
         }
         return iter->value;
@@ -89,6 +89,7 @@ namespace SEUTraffic
     Point operator+(const Point &A, const Point &B) {
         return {A.x + B.x, A.y + B.y};
     }
+
     Point operator-(const Point &A) {
         return {-A.x, -A.y};
     }
@@ -110,23 +111,23 @@ namespace SEUTraffic
         return A.x * B.x + A.y * B.y;
     }
 
-    double calcDist(const Point &A, const Point &B){
-        return sqrt((A.x-B.x)*(A.x-B.x)+(A.y-B.y)*(A.y-B.y));
+    double calcDist(const Point &A, const Point &B) {
+        return sqrt((A.x - B.x) * (A.x - B.x) + (A.y - B.y) * (A.y - B.y));
     }
 
     double calcAng(Point A, Point B) {
         double ang = A.ang() - B.ang();
         double pi = acos(-1);
-        while(ang >= pi / 2)
+        while (ang >= pi / 2)
             ang -= pi / 2;
-        while(ang < 0)
+        while (ang < 0)
             ang += pi / 2;
         return std::min(ang, pi - ang);
     }
 
     bool onSegment(Point A, Point B, Point P) {
-        double v1 = crossMultiply(B-A, P-A);
-        double v2 = dotMultiply(P-A, P-B);
+        double v1 = crossMultiply(B - A, P - A);
+        double v2 = dotMultiply(P - A, P - B);
         return Point::sign(v1) == 0 && Point::sign(v2) <= 0;
     }
 
@@ -141,7 +142,7 @@ namespace SEUTraffic
         return {-y, x};
     }
 
-    Point::Point(double x, double y):x(x),y(y) { }
+    Point::Point(double x, double y) : x(x), y(y) {}
 
     double Point::len() {
         return sqrt(x * x + y * y);

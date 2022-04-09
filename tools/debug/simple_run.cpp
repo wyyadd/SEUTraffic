@@ -7,18 +7,18 @@
 using namespace SEUTraffic;
 
 int main() {
-    std::string configFile = "cityflow_config/ny_1x16/config.json";
+    std::string configFile = "cityflow_config/test/config.json";
 //    std::string configFile = "examples/config.json";
-    size_t totalStep = 5000;
+    size_t totalStep = 2000;
     bool fixedTimeTraffic = true;//是否采用固定时长红绿灯
 
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
-    for (int i = 0; i < (int)totalStep; i++) {
+    for (int i = 0; i < (int) totalStep; i++) {
         engine.nextStep(fixedTimeTraffic);
-        if(i % (totalStep/10) == 0)
-            std::cout<<"The current degree of completion: "<< 100*i/totalStep << "%" << std::endl;
+        if (i % (totalStep / 10) == 0)
+            std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
     }
     engine.logTrafficStatistics();
     time(&endTime);

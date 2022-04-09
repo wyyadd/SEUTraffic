@@ -7,11 +7,10 @@
 #include <random>
 #include <utility>
 
-namespace SEUTraffic
-{
+namespace SEUTraffic {
 
     Vehicle::Vehicle(const VehicleInfo &vehicleInfo, std::string id, Engine *engine, Flow *flow)
-        : engine(engine),vehicleInfo(vehicleInfo), id(std::move(id)),flow(flow){
+            : engine(engine), vehicleInfo(vehicleInfo), id(std::move(id)), flow(flow) {
 //        controllerInfo.running = true;
         controllerInfo.dis = 0;
         planned = vehicleInfo.getRouter().initRoutePlan();
@@ -20,13 +19,11 @@ namespace SEUTraffic
         startTime = engine->getCurrentTime();
     }
 
-    Drivable* Vehicle::getCurDrivable() const
-    {
+    Drivable *Vehicle::getCurDrivable() const {
         return controllerInfo.drivable; // 返回当前的drivable
     }
 
-    Drivable* Vehicle::getNextDrivable()
-    {
+    Drivable *Vehicle::getNextDrivable() {
         int i = currentDrivableIndex + 1;
         if (i < this->planned.size()) {
             return planned[i];
@@ -34,18 +31,16 @@ namespace SEUTraffic
     }
 
     Drivable *Vehicle::getFormerDrivable() {
-        if(currentDrivableIndex == 0)
+        if (currentDrivableIndex == 0)
             return nullptr;
-        return planned[currentDrivableIndex-1];
+        return planned[currentDrivableIndex - 1];
     }
 
-    Intersection* Vehicle::getNextIntersection()
-    {
+    Intersection *Vehicle::getNextIntersection() {
         return vehicleInfo.getRouter().getNextInter();
     }
 
-    void Vehicle::setLeader(Vehicle* leaderCar)
-    {
+    void Vehicle::setLeader(Vehicle *leaderCar) {
         // 设置leader
         controllerInfo.leader = leaderCar;
 //        if (leaderCar == nullptr) {
@@ -59,38 +54,32 @@ namespace SEUTraffic
 //        }
     }
 
-    void Vehicle::update()
-    {
+    void Vehicle::update() {
         if (buffer.isEndSet) {
             controllerInfo.end = buffer.end;
             if (buffer.end) {
                 controllerInfo.running = false;
-                this->engine->addCumulativeTravelTime(endTime,startTime);
-            }
-            else controllerInfo.running = true;
+                this->engine->addCumulativeTravelTime(endTime, startTime);
+            } else controllerInfo.running = true;
             buffer.isEndSet = false;
         }
 
-        if (buffer.isDisSet)
-        {
+        if (buffer.isDisSet) {
             controllerInfo.dis = buffer.dis;
             buffer.isDisSet = false;
         }
 
-        if (buffer.isDrivableSet)
-        {
+        if (buffer.isDrivableSet) {
             controllerInfo.drivable = buffer.drivable;
             buffer.isDrivableSet = false;
         }
     }
 
-    void Vehicle::updateLeaderAndGap(Vehicle *leader)
-    {
+    void Vehicle::updateLeaderAndGap(Vehicle *leader) {
         this->setLeader(leader);
     }
 
-    std::map<std::string, std::string> Vehicle::getInfo() const
-    {
+    std::map<std::string, std::string> Vehicle::getInfo() const {
         std::map<std::string, std::string> info;
         info["running"] = std::to_string(isRunning());
         if (!isRunning())
@@ -98,7 +87,7 @@ namespace SEUTraffic
 
         info["distance"] = std::to_string(getDistance());
         info["speed"] = std::to_string(getSpeed());
-        const auto& drivable = getCurDrivable();
+        const auto &drivable = getCurDrivable();
         info["drivable"] = drivable->getId();
         const auto &road = drivable->isLane() ? getCurLane()->getBelongRoad() : nullptr;
         if (road) {
@@ -107,8 +96,8 @@ namespace SEUTraffic
         }
         // add routing info
         std::string route;
-        for (const auto r : vehicleInfo.getRouter().getRoute()) {
-            route +=r->getId() + " ";
+        for (const auto r: vehicleInfo.getRouter().getRoute()) {
+            route += r->getId() + " ";
         }
         info["route"] = route;
 
@@ -151,9 +140,24 @@ namespace SEUTraffic
         // }
     }
 
-    Lane* Vehicle::getCurLane() const  {
-        if (getCurDrivable()->isLane()) return (Lane *)getCurDrivable();
+    Lane *Vehicle::getCurLane() const {
+        if (getCurDrivable()->isLane()) return (Lane *) getCurDrivable();
         else return nullptr;
     }
 
+    // 参考算法: https://www.csdn.net/tags/MtTaMg4sMjIxODgxLWJsb2cO0O0O.html
+    bool Vehicle::ifCrash(Vehicle *v) const {
+        if(id == v->getId())
+            return false;
+        auto point1 = this->getPoint();
+        auto point1_left_up = Point(point1.x - this->getWidth() / 2, point1.y);
+        auto point1_right_down = Point(point1.x + this->getWidth() / 2, point1.y + this->getLen());
+        auto point2 = v->getPoint();
+        auto point2_left_up = Point(point2.x - v->getWidth() / 2, point2.y);
+        auto point2_right_down = Point(point2.x + v->getWidth() / 2, point2.y + v->getLen());
+        if (point1_left_up.x > point2_right_down.x || point1_right_down.x < point2_left_up.x
+            || point1_left_up.y > point2_right_down.y || point1_right_down.y < point2_left_up.y)
+            return false;
+        return true;
+    }
 }

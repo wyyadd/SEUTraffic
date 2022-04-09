@@ -4,8 +4,7 @@
 #include <limits>
 #include <random>
 
-namespace SEUTraffic
-{
+namespace SEUTraffic {
     Road *VehicleInfo::getFirstRoad() const {
         return router->getFirstRoad();
     }

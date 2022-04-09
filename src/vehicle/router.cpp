@@ -7,12 +7,12 @@
 
 namespace SEUTraffic {
     Router::Router(std::vector<Road *> roads, std::vector<Intersection *> inters)
-            : route(std::move(roads)),inters(std::move(inters)){
-        srand((unsigned)time(nullptr));
+            : route(std::move(roads)), inters(std::move(inters)) {
+        srand((unsigned) time(nullptr));
     }
 
-    std::vector<Drivable*> Router::initRoutePlan() {
-        std::vector<Drivable*> planned;
+    std::vector<Drivable *> Router::initRoutePlan() {
+        std::vector<Drivable *> planned;
         planned.push_back(getFirstDrivable());
         for (int i = 0; i < 2 * route.size() - 2; i++) {
             auto drivable = getNextDrivable(planned[i], i / 2);
@@ -21,7 +21,7 @@ namespace SEUTraffic {
         return planned;
     }
 
-    Drivable * Router::getFirstDrivable() {
+    Drivable *Router::getFirstDrivable() {
         const std::vector<Lane *> &lanes = route[0]->getLanePointers();
         if (route.size() == 1) {
             return selectLane(nullptr, lanes);
@@ -37,7 +37,7 @@ namespace SEUTraffic {
         }
     }
 
-    Drivable * Router::getNextDrivable(const Drivable *curDrivable, int curRoadIndex) {
+    Drivable *Router::getNextDrivable(const Drivable *curDrivable, int curRoadIndex) {
         if (curDrivable->isLaneLink()) {
             return dynamic_cast<const LaneLink *>(curDrivable)->getEndLane();
         } else {

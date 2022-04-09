@@ -15,9 +15,11 @@
     - 后端与前端优化车辆渲染与车辆坐标问题。(待完成)
 ![重叠问题](https://github.com/wyyadd/SEUTraffic/blob/main/img/overlap.png)
 2. 跨道问题： 在十字路口处， 若laneLink与lane重叠且信号灯能同时放行的话， 直行的车与拐弯的车会发生重叠现象，不会触发碰撞检测。
-解决思路：
-    - 后端增加Drivable重叠检测判断(待完成)
-![跨道问题](https://github.com/wyyadd/SEUTraffic/blob/main/img/cross.png)
+解决思路：  
+    - 后端增加Drivable重叠检测判断(已解决)
+    
+![跨道问题解决1](https://github.com/wyyadd/SEUTraffic/blob/main/img/cross_solve1.png)
+![跨道问题解决2](https://github.com/wyyadd/SEUTraffic/blob/main/img/cross_solve2.png)
 
 ### 效果展示
 ![效果展示](https://github.com/wyyadd/SEUTraffic/blob/main/img/demo1.gif)
