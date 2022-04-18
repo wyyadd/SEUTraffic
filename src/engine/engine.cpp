@@ -307,8 +307,7 @@ namespace SEUTraffic {
                 curDrivable->isLane() && !dynamic_cast<const LaneLink *>(nextDrivable)->isAvailable();
         // if next drivable has no vehicles
         if (next_leader == nullptr || next_leader->hasSetEnd() ||
-            (next_leader->getChangedDrivable() != nullptr &&
-             next_leader->getChangedDrivable() != nextDrivable)) {
+            (next_leader->getChangedDrivable() != nullptr && next_leader->getChangedDrivable() != nextDrivable)) {
             if (remainDist >= 0) {
                 vehicle->setDis(maxPossibleDist);
             } else {
@@ -328,56 +327,48 @@ namespace SEUTraffic {
                     (next_leader->hasSetDist() ? next_leader->getBufferDist() : next_leader->getDistance())
                     - next_leader->getMinGap() - next_leader->getLen();
             if (remainDist >= 0) { // still on this drivable
-                if (safe_distance >= 0) { // no overlap
-                    vehicle->setDis(maxPossibleDist);
-                } else { // maybe overlap: safe_dist < 0
-                    if (sameDrivable) {
-                        if (remainDist >= -safe_distance) {
-                            vehicle->setDis(maxPossibleDist);
-                        } else {
-                            vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                            stopFlag = next_leader->isStopped();
-                        }
-                    } else {
+                if (sameDrivable || safe_distance >= 0) {
+                    if (remainDist >= -safe_distance) {
                         vehicle->setDis(maxPossibleDist);
+                    } else { // sameDrivable && remainDist < -safeDist
+                        vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
+                        stopFlag = next_leader->isStopped();
                     }
-
+                } else { // differentDrivable and safDist < 0
+                    vehicle->setDis(std::max(currentDist,
+                                             std::min(currentDrivableLength-next_leader->getLen() * 1.1, maxPossibleDist)));
+                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             } else { // less than 0 means will possibly change drivable
                 remainDist = -remainDist;
-                if (remainDist <= safe_distance) { // no overlap
-                    // if red light then stop
-                    if (canNotGo) {
-                        vehicle->setDis(currentDrivableLength);
-                        stopFlag = true;
-                    } else {
-                        vehicle->setDis(remainDist);
-                        vehicle->setDrivable(nextDrivable);
-                        nextDrivable->pushVehicle(vehicle);
-                    }
-                } else { // over lap
-                    if (safe_distance >= 0) { // still can change drivable
+                if (sameDrivable || safe_distance >= 0) {
+                    // no overlap or (overlap but still can change drivable)
+                    if (remainDist <= safe_distance || (remainDist > safe_distance && safe_distance >= 0)) {
                         // if red light then stop
                         if (canNotGo) {
                             vehicle->setDis(currentDrivableLength);
                             stopFlag = true;
                         } else {
-                            vehicle->setDis(safe_distance);
                             vehicle->setDrivable(nextDrivable);
                             nextDrivable->pushVehicle(vehicle);
-                            stopFlag = next_leader->isStopped();
+                            vehicle->setDis(remainDist > safe_distance ? safe_distance : remainDist);
+                            stopFlag = remainDist > safe_distance &&  next_leader->isStopped();
                         }
-                    } else { // cannot change drivable
-                        if (sameDrivable) {
-                            vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                            stopFlag = next_leader->isStopped();
-                        } else {
-                            vehicle->setDis(currentDrivableLength);
-                            stopFlag = true;
-                        }
+                    } else { // overlap and cannot change drivable
+                        // remainDist > safe_dist && safe_dist < 0
+                        vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
+                        stopFlag = next_leader->isStopped();
                     }
+                } else{ // differentDrivable and safDist < 0
+                    vehicle->setDis(std::max(currentDrivableLength-next_leader->getLen() * 1.1, currentDist));
+                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             }
+        }
+        if(curDrivable->isLaneLink() && !vehicle->hasSetDrivable()){
+           /**
+            *  if(crash) then update dist
+            */
         }
     }
 
