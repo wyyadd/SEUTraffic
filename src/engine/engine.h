@@ -70,6 +70,8 @@ namespace SEUTraffic {
 
         void updateLocation();
 
+        static void updateVehicleDistWithNextDrivable(Vehicle* vehicle, double maxPossibleDist, bool& stopFlag);
+
         void updateLeaderAndGap();
 
         void threadController(std::set<Vehicle *> &vehicles,
