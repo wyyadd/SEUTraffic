@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "vehicle/router.h"
+
 namespace SEUTraffic {
 
     class Vehicle;
@@ -18,8 +19,8 @@ namespace SEUTraffic {
         std::shared_ptr<const Router> router = nullptr;
 
     public:
-        VehicleInfo(double length, double width, double minGap, std::shared_ptr<const Router>& router)
-                            : length(length), width(width), minGap(minGap), router(router) {};
+        VehicleInfo(double length, double width, double minGap, std::shared_ptr<const Router> &router)
+                : length(length), width(width), minGap(minGap), router(router) {};
 
         Road *getFirstRoad() const;
 
@@ -29,11 +30,11 @@ namespace SEUTraffic {
 
         double getMinGap() const { return this->minGap; }
 
-        Router getRouter() const {return *router;}
+        Router getRouter() const { return *router; }
 
         double getLen() const { return this->length; }
 
-        double getWidth() const { return this->width;}
+        double getWidth() const { return this->width; }
     };
 }
 #endif // SEUTRAFFIC_VEHICLEINFO_H

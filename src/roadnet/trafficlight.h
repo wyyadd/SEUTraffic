@@ -1,37 +1,40 @@
 #ifndef SEUTRAFFIC_TRAFFICLIGHT_H
 #define SEUTRAFFIC_TRAFFICLIGHT_H
+
 #include <vector>
 
-namespace SEUTraffic{
+namespace SEUTraffic {
     class Intersection;
 
     class RoadLink;
 
     class TrafficLight;
 
-    class LightPhase{
+    class LightPhase {
         friend class RoadNet;
+
         friend class RoadLink;
+
         friend class TrafficLight;
+
     private:
         unsigned int phase = 0;
         double time = 0.0;
         std::vector<bool> roadLinkAvailable;
 
     public:
-        std::vector<bool> getRoadLinkAvailable()
-        {
+        std::vector<bool> getRoadLinkAvailable() {
             return roadLinkAvailable;
         }
 
-        unsigned int getPhaseIndex() const
-        {
+        unsigned int getPhaseIndex() const {
             return phase;
         }
     };
 
-    class TrafficLight{
+    class TrafficLight {
         friend class RoadNet;
+
     private:
         Intersection *intersection = nullptr;
         std::vector<LightPhase> phases;
@@ -47,7 +50,7 @@ namespace SEUTraffic{
 
         Intersection *getIntersection();
 
-        std::vector<LightPhase> &getPhases(){
+        std::vector<LightPhase> &getPhases() {
             return phases;
         }
 

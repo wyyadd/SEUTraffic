@@ -28,9 +28,9 @@ namespace SEUTraffic {
 
     public:
         Flow(VehicleInfo vehicleTemplate, double timeInterval,
-            Engine *engine, int startTime, int endTime, std::string id)
-            : vehicleTemplate(std::move(vehicleTemplate)), interval(timeInterval),
-              startTime(startTime), endTime(endTime), engine(engine), id(std::move(id)) {
+             Engine *engine, int startTime, int endTime, std::string id)
+                : vehicleTemplate(std::move(vehicleTemplate)), interval(timeInterval),
+                  startTime(startTime), endTime(endTime), engine(engine), id(std::move(id)) {
             assert(timeInterval >= 1 || (startTime == endTime));
             nowTime = interval;
         }

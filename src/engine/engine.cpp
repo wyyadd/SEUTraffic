@@ -245,6 +245,7 @@ namespace SEUTraffic {
     }
 
     // wyy: function_主线程——更新每辆车的dist和变道， 设置结束等信息
+    // TODO acc
     void Engine::updateLocation() {
         updateLocationFlag = false;
         std::sort(pushBuffer.begin(), pushBuffer.end(), vehicleCmp);
@@ -256,7 +257,6 @@ namespace SEUTraffic {
             double maxPossibleDist = vehiclePair.second;
             double currentDist = vehicle->getDistance();
             double currentDrivableLength = curDrivable->getLength();
-
             // current vehicle is leader in this drivable
             bool stopFlag = false;
             if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
@@ -303,14 +303,14 @@ namespace SEUTraffic {
                             if (safe_distance >= 0) { // no overlap
                                 vehicle->setDis(maxPossibleDist);
                             } else { // maybe overlap: safe_dist < 0
-                                if(sameDrivable) {
-                                    if(remainDist >= -safe_distance){
-                                       vehicle->setDis(maxPossibleDist);
-                                    } else{
+                                if (sameDrivable) {
+                                    if (remainDist >= -safe_distance) {
+                                        vehicle->setDis(maxPossibleDist);
+                                    } else {
                                         vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
                                         stopFlag = next_leader->isStopped();
                                     }
-                                } else{
+                                } else {
                                     vehicle->setDis(maxPossibleDist);
                                 }
 
@@ -340,10 +340,10 @@ namespace SEUTraffic {
                                         stopFlag = next_leader->isStopped();
                                     }
                                 } else { // cannot change drivable
-                                    if(sameDrivable) {
+                                    if (sameDrivable) {
                                         vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
                                         stopFlag = next_leader->isStopped();
-                                    } else{
+                                    } else {
                                         vehicle->setDis(currentDrivableLength);
                                         stopFlag = true;
                                     }
@@ -465,6 +465,7 @@ namespace SEUTraffic {
     }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
+    // TODO 加速度
     void Engine::threadGetAction(std::set<Vehicle *> &vehicles) {
         startBarrier.wait();
         if (finished)

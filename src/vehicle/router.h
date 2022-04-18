@@ -7,16 +7,22 @@
 #include <deque>
 #include <list>
 
-namespace SEUTraffic{
+namespace SEUTraffic {
     class Road;
+
     class Drivable;
+
     class Lane;
+
     class Intersection;
+
     class LaneLink;
+
     class Vehicle;
+
     class Engine;
 
-    class Router{
+    class Router {
     private:
         std::vector<Road *> route;
 
@@ -26,24 +32,23 @@ namespace SEUTraffic{
     public:
         Router(std::vector<Road *> roads, std::vector<Intersection *> inters);
 
-        std::vector<Drivable*> initRoutePlan();
+        std::vector<Drivable *> initRoutePlan();
 
-        static size_t selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) ;
+        static size_t selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes);
 
-        static Lane *selectLane(const Lane *curLane, const std::vector<Lane *> &lanes) ;
+        static Lane *selectLane(const Lane *curLane, const std::vector<Lane *> &lanes);
 
-        static LaneLink *selectLaneLink(const Lane *curLane, const std::vector<LaneLink*> &laneLinks) ;
+        static LaneLink *selectLaneLink(const Lane *curLane, const std::vector<LaneLink *> &laneLinks);
 
-        Drivable * getFirstDrivable();
+        Drivable *getFirstDrivable();
 
-        Drivable * getNextDrivable(const Drivable *curDrivable, int curRoadIndex);
+        Drivable *getNextDrivable(const Drivable *curDrivable, int curRoadIndex);
 
-        Road* getFirstRoad() const;
+        Road *getFirstRoad() const;
 
-        Intersection* getNextInter(); //
+        Intersection *getNextInter(); //
 
-        std::vector<Road*> getRoute() const
-        {
+        std::vector<Road *> getRoute() const {
             return route;
         }
 

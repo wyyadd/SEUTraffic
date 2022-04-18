@@ -15,10 +15,10 @@ int main() {
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
-    for (int i = 0; i < (int)totalStep; i++) {
+    for (int i = 0; i < (int) totalStep; i++) {
         engine.nextStep(fixedTimeTraffic);
-        if(i % (totalStep/10) == 0)
-            std::cout<<"The current degree of completion: "<< 100*i/totalStep << "%" << std::endl;
+        if (i % (totalStep / 10) == 0)
+            std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
     }
     engine.logTrafficStatistics();
     time(&endTime);
