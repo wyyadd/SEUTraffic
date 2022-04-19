@@ -162,6 +162,12 @@ namespace SEUTraffic {
             ++currentDrivableIndex;
         }
 
+        void unsetDrivable(){
+            buffer.drivable = nullptr;
+            buffer.isDrivableSet = false;
+            --currentDrivableIndex;
+        }
+
         bool hasSetStop() const {
             return stopped;
         }

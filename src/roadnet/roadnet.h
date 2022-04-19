@@ -208,7 +208,7 @@ namespace SEUTraffic {
             vehicles.push_back(vehicle);
         }
 
-        void popVehicle() { vehicles.pop_front(); }
+        void popVehicle() { vehicles.pop_back(); }
 
         virtual std::string getId() const = 0;
 

@@ -368,13 +368,17 @@ namespace SEUTraffic {
         }
 
         // cross-check
-        if (curDrivable->isLaneLink() && !vehicle->hasSetDrivable()) {
+        if (curDrivable->isLaneLink()) {
             auto intersection = dynamic_cast<const LaneLink *>(curDrivable)->getIntersection();
             for (auto laneLink: intersection->getLaneLinks()) {
                 for (auto car = laneLink->getVehicles().rbegin(); car != laneLink->getVehicles().rend(); ++car) {
                     if (vehicle->ifCrash(*car)) {
                         vehicle->setDis(currentDist);
                         stopFlag = true;
+                        if(vehicle->hasSetDrivable()){
+                            nextDrivable->popVehicle();
+                            vehicle->unsetDrivable();
+                        }
                         return;
                     }
                 }
