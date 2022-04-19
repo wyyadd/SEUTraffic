@@ -150,7 +150,6 @@ namespace SEUTraffic {
             this->endTime = newEndTime;
         }
 
-
 //        void updateTotalDist(double dist) { totalDist = dist; }
 
         double getEndTime() const {
@@ -182,6 +181,8 @@ namespace SEUTraffic {
 
         //yzh modify
         Lane *getCurLane() const;
+
+        bool ifCrash(Vehicle *) const;
 
     };
 }

@@ -144,4 +144,20 @@ namespace SEUTraffic {
         if (getCurDrivable()->isLane()) return (Lane *) getCurDrivable();
         else return nullptr;
     }
+
+    // 参考算法: https://www.csdn.net/tags/MtTaMg4sMjIxODgxLWJsb2cO0O0O.html
+    bool Vehicle::ifCrash(Vehicle *v) const {
+        if(id == v->getId())
+            return false;
+        auto point1 = this->getPoint();
+        auto point1_left_up = Point(point1.x - this->getWidth() / 2, point1.y);
+        auto point1_right_down = Point(point1.x + this->getWidth() / 2, point1.y + this->getLen());
+        auto point2 = v->getPoint();
+        auto point2_left_up = Point(point2.x - v->getWidth() / 2, point2.y);
+        auto point2_right_down = Point(point2.x + v->getWidth() / 2, point2.y + this->getLen());
+        if (point1_left_up.x > point2_right_down.x || point1_right_down.x < point2_left_up.x
+            || point1_left_up.y > point2_right_down.y || point1_right_down.y < point2_left_up.y)
+            return false;
+        return true;
+    }
 }

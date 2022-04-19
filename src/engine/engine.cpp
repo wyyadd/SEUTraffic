@@ -336,7 +336,8 @@ namespace SEUTraffic {
                     }
                 } else { // differentDrivable and safDist < 0
                     vehicle->setDis(std::max(currentDist,
-                                             std::min(currentDrivableLength-next_leader->getLen() * 1.1, maxPossibleDist)));
+                                             std::min(currentDrivableLength - next_leader->getLen() * 1.1,
+                                                      maxPossibleDist)));
                     stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             } else { // less than 0 means will possibly change drivable
@@ -352,23 +353,32 @@ namespace SEUTraffic {
                             vehicle->setDrivable(nextDrivable);
                             nextDrivable->pushVehicle(vehicle);
                             vehicle->setDis(remainDist > safe_distance ? safe_distance : remainDist);
-                            stopFlag = remainDist > safe_distance &&  next_leader->isStopped();
+                            stopFlag = remainDist > safe_distance && next_leader->isStopped();
                         }
                     } else { // overlap and cannot change drivable
                         // remainDist > safe_dist && safe_dist < 0
                         vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
                         stopFlag = next_leader->isStopped();
                     }
-                } else{ // differentDrivable and safDist < 0
-                    vehicle->setDis(std::max(currentDrivableLength-next_leader->getLen() * 1.1, currentDist));
+                } else { // differentDrivable and safDist < 0
+                    vehicle->setDis(std::max(currentDrivableLength - next_leader->getLen() * 1.1, currentDist));
                     stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             }
         }
-        if(curDrivable->isLaneLink() && !vehicle->hasSetDrivable()){
-           /**
-            *  if(crash) then update dist
-            */
+
+        // cross-check
+        if (curDrivable->isLaneLink() && !vehicle->hasSetDrivable()) {
+            auto intersection = dynamic_cast<const LaneLink *>(curDrivable)->getIntersection();
+            for (auto laneLink: intersection->getLaneLinks()) {
+                for (auto car = laneLink->getVehicles().rbegin(); car != laneLink->getVehicles().rend(); ++car) {
+                    if (vehicle->ifCrash(*car)) {
+                        vehicle->setDis(currentDist);
+                        stopFlag = true;
+                        return;
+                    }
+                }
+            }
         }
     }
 
@@ -395,7 +405,7 @@ namespace SEUTraffic {
         }
     }
 
-//yzh:处理waitingBuffer中的车辆
+    //yzh:处理waitingBuffer中的车辆
     void Engine::handleWaiting() {
         for (Lane *lane: roadNet.getLanes()) {
             //yzh:waitingBuffer中存放的是新产生的车辆流，firstLane为当前lane

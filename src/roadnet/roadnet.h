@@ -316,6 +316,7 @@ namespace SEUTraffic {
 
         bool isTurn() const { return roadLink->isTurn(); }
 
+        Intersection *getIntersection() const {return this->roadLink->intersection;}
     };
 
     class RoadNet {
