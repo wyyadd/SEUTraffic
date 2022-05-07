@@ -245,7 +245,6 @@ namespace SEUTraffic {
     }
 
     // wyy: function_主线程——更新每辆车的dist和变道， 设置结束等信息
-    // TODO acc
     void Engine::updateLocation() {
         updateLocationFlag = false;
         std::sort(pushBuffer.begin(), pushBuffer.end(), vehicleCmp);
@@ -375,7 +374,7 @@ namespace SEUTraffic {
                     if (vehicle->ifCrash(*car)) {
                         vehicle->setDis(currentDist);
                         stopFlag = true;
-                        if(vehicle->hasSetDrivable()){
+                        if (vehicle->hasSetDrivable()) {
                             nextDrivable->popVehicle();
                             vehicle->unsetDrivable();
                         }
@@ -465,7 +464,8 @@ namespace SEUTraffic {
         steps += 1;
         currentTime += 1;
 
-        updateLog();
+        if (!predictMode)
+            updateLog();
     }
 
     bool Engine::checkPriority(size_t priority) {
@@ -478,7 +478,7 @@ namespace SEUTraffic {
         vehiclePool.emplace(vehicle->getPriority(), std::make_pair(vehicle, threadIndex));
         vehicleMap.emplace(vehicle->getId(), vehicle);
         threadVehiclePool[threadIndex].insert(vehicle);
-
+        if (predictMode) predictVehicles.push_back(vehicle);
     }
 
     // wyy: function-计算每个running的车下一秒应该走的距离， 存到buffer中
@@ -539,7 +539,9 @@ namespace SEUTraffic {
                     vehicleMap.erase(vehicle->getId());
                     auto iter = vehiclePool.find(vehicle->getPriority());
                     threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
-                    delete vehicle;
+                    if(!predictMode) {
+                        delete vehicle;
+                    }
                     vehiclePool.erase(iter);
                     guard.unlock();
                 }
@@ -778,6 +780,55 @@ namespace SEUTraffic {
         if (!writeJsonToFile(dir + "replay_statistics.json", jsonRoot)) {
             std::cerr << "write statistics log file error" << std::endl;
         }
+    }
+
+    void Engine::predictPeriod(int period) {
+        if (period < 1)
+            return;
+        predictMode = true;
+        auto tmp_vehiclePool = vehiclePool;
+        auto tmp_vehicleMap = vehicleMap;
+        auto tmp_threadVehiclePool = threadVehiclePool;
+        auto tmp_flow = flows;
+        size_t tmp_steps = steps;
+        int tmp_finishedVehicleCnt = finishedVehicleCnt;
+        int tmp_vehicleActiveCount = vehicleActiveCount;
+        int tmp_totalVehicleCnt = totalVehicleCnt;
+        int tmp_currentTime = currentTime;
+        double tmp_cumulativeTravelTime = cumulativeTravelTime;
+        double tmp_cumulativeWaitingTime = cumulativeWaitingTime;
+        roadNet.snapShot();
+
+        std::vector<Vehicle> tmp_vehicle;
+        for (auto& v: vehicleMap) {
+            tmp_vehicle.push_back(*v.second);
+        }
+
+        for (int i = 0; i < period; ++i)
+            nextStep();
+        std::cout << "predict done\n";
+
+        for(auto &v : tmp_vehicle) {
+            tmp_vehicleMap[v.getId()]->reset(v);
+        }
+        for(auto v : predictVehicles){
+            delete v;
+        }
+        predictVehicles.clear();
+
+        vehiclePool = tmp_vehiclePool;
+        vehicleMap = tmp_vehicleMap;
+        threadVehiclePool = tmp_threadVehiclePool;
+        flows = tmp_flow;
+        steps = tmp_steps;
+        finishedVehicleCnt = tmp_finishedVehicleCnt;
+        vehicleActiveCount = tmp_vehicleActiveCount;
+        totalVehicleCnt = tmp_totalVehicleCnt;
+        currentTime = tmp_currentTime;
+        cumulativeTravelTime = tmp_cumulativeTravelTime;
+        cumulativeWaitingTime = tmp_cumulativeWaitingTime;
+        roadNet.restore();
+        predictMode = false;
     }
 
 }
