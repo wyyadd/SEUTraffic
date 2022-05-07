@@ -5,6 +5,7 @@
 #include "roadnet/trafficlight.h"
 #include "rapidjson/document.h"
 
+#include <utility>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -171,6 +172,7 @@ namespace SEUTraffic {
         double width;
         double maxSpeed;
         std::list<Vehicle *> vehicles;
+        std::list<Vehicle *> snapshotVehicles;
         DrivableType drivableType;
         // wyy modify: add points
         std::vector<Point> points;
@@ -218,6 +220,10 @@ namespace SEUTraffic {
         Point getPointByDistance(double dis) const;
 
         Point getDirectionByDistance(double dis) const;
+
+        void snapshot(){snapshotVehicles = vehicles;}
+
+        void restore(){vehicles = snapshotVehicles; snapshotVehicles.clear();}
     };
 
     class Lane : public Drivable {
@@ -230,6 +236,7 @@ namespace SEUTraffic {
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
         std::deque<Vehicle *> waitingBuffer;
+        std::deque<Vehicle *> snapshotWaitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
 
     public:
@@ -268,13 +275,15 @@ namespace SEUTraffic {
         std::vector<LaneLink *> &getLaneLinks() { return this->laneLinks; }
 
         /* waiting buffer */
-        const std::deque<Vehicle *> &getWaitingBuffer() const { return waitingBuffer; }
-
         std::deque<Vehicle *> &getWaitingBuffer() { return waitingBuffer; }
 
         void pushWaitingVehicle(Vehicle *vehicle) {
             waitingBuffer.emplace_back(vehicle);
         }
+
+        void waitingBufferSnapshot(){ snapshotWaitingBuffer = waitingBuffer;}
+
+        void waitingBufferRestore(){waitingBuffer = snapshotWaitingBuffer; snapshotWaitingBuffer.clear();}
     };
 
     class LaneLink : public Drivable {
@@ -316,7 +325,7 @@ namespace SEUTraffic {
 
         bool isTurn() const { return roadLink->isTurn(); }
 
-        Intersection *getIntersection() const {return this->roadLink->intersection;}
+        Intersection *getIntersection() const { return this->roadLink->intersection; }
     };
 
     class RoadNet {
@@ -373,6 +382,10 @@ namespace SEUTraffic {
         std::vector<std::string> getInterIds() {
             return this->interIds;
         }
+
+        void snapShot();
+
+        void restore();
     };
 }
 

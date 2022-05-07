@@ -160,4 +160,12 @@ namespace SEUTraffic {
             return false;
         return true;
     }
+
+    void Vehicle::reset(Vehicle &v) {
+        controllerInfo = v.controllerInfo;
+        endTime = v.endTime;
+        currentDrivableIndex = v.currentDrivableIndex;
+        stopped = v.isStopped();
+        priority = v.getPriority();
+    }
 }

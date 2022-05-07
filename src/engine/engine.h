@@ -50,6 +50,10 @@ namespace SEUTraffic {
         // wyy modify: logout
         std::ofstream logOut;
 
+        // 预测模式
+        bool predictMode = false;
+        std::vector<Vehicle*> predictVehicles;
+
         struct Statistics {
             std::vector<int> time;
             std::vector<int> waitingVehicleCnt;
@@ -99,7 +103,7 @@ namespace SEUTraffic {
 
         bool loadConfig(const std::string &configFile);
 
-        void nextStep(bool fixedTimeTraffic);
+        void nextStep(bool fixedTimeTraffic = true);
 
         bool checkPriority(size_t priority);
 
@@ -166,6 +170,9 @@ namespace SEUTraffic {
         void logTrafficStatistics();
 
         void handleWaiting();
+
+        void predictPeriod(int period);
+
     };
 }
 

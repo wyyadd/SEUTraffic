@@ -746,4 +746,18 @@ namespace SEUTraffic {
         }
         return lanePointers;
     }
+
+    void RoadNet::snapShot() {
+       for(auto d : drivables)
+           d->snapshot();
+       for(auto l : lanes)
+           l->waitingBufferSnapshot();
+    }
+
+    void RoadNet::restore() {
+        for(auto d : drivables)
+            d->restore();
+        for(auto l : lanes)
+            l->waitingBufferRestore();
+    }
 }

@@ -190,6 +190,7 @@ namespace SEUTraffic {
 
         bool ifCrash(Vehicle *) const;
 
+        void reset(Vehicle &v);
     };
 }
 #endif // SEUTRAFFIC_VEHICLE_H
