@@ -162,6 +162,7 @@ namespace SEUTraffic {
     }
 
     void Vehicle::reset(Vehicle &v) {
+        buffer = v.buffer;
         controllerInfo = v.controllerInfo;
         endTime = v.endTime;
         currentDrivableIndex = v.currentDrivableIndex;
