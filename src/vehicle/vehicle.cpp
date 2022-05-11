@@ -112,7 +112,7 @@ namespace SEUTraffic {
     }
 
     Point Vehicle::getPoint() const {
-        return controllerInfo.drivable->getPointByDistance(controllerInfo.dis);
+        return controllerInfo.drivable->getPointByDistance(buffer.isDisSet ? buffer.dis : controllerInfo.dis);
         // if (!controllerInfo.drivable->isLane()) {
         // if (fabs(laneChangeInfo.offset) < eps || !controllerInfo.drivable->isLane()) {
         //     return controllerInfo.drivable->getPointByDistance(controllerInfo.dis);

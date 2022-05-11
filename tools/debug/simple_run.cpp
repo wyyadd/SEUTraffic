@@ -19,7 +19,7 @@ int main() {
         engine.nextStep(fixedTimeTraffic);
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
-            engine.predictPeriod(30);
+//            engine.predictPeriod(30);
         }
     }
     engine.logTrafficStatistics();
