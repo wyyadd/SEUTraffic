@@ -279,7 +279,8 @@ namespace SEUTraffic {
             } else { // has leader
                 vehicle->setDis(std::max(currentDist,
                                          std::min(maxPossibleDist,
-                                                  leader->getBufferDist() - leader->getMinGap() - leader->getLen())));
+                                                  leader->getBufferDist() - leader->getMinGap()
+                                                  - leader->getLen() / 2 - vehicle->getLen() / 2)));
                 stopFlag = leader->isStopped();
             }
 
@@ -324,7 +325,7 @@ namespace SEUTraffic {
             bool sameDrivable = next_leader->getFormerDrivable() == curDrivable;
             double safe_distance =
                     (next_leader->hasSetDist() ? next_leader->getBufferDist() : next_leader->getDistance())
-                    - next_leader->getMinGap() - next_leader->getLen();
+                    - next_leader->getMinGap() - next_leader->getLen() / 2 - vehicle->getLen()/2;
             if (remainDist >= 0) { // still on this drivable
                 if (sameDrivable || safe_distance >= 0) {
                     if (remainDist >= -safe_distance) {
@@ -335,7 +336,7 @@ namespace SEUTraffic {
                     }
                 } else { // differentDrivable and safDist < 0
                     vehicle->setDis(std::max(currentDist,
-                                             std::min(currentDrivableLength - next_leader->getLen() * 1.1,
+                                             std::min(currentDrivableLength - next_leader->getLen()* 1.1,
                                                       maxPossibleDist)));
                     stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
@@ -539,7 +540,7 @@ namespace SEUTraffic {
                     vehicleMap.erase(vehicle->getId());
                     auto iter = vehiclePool.find(vehicle->getPriority());
                     threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
-                    if(!predictMode) {
+                    if (!predictMode) {
                         delete vehicle;
                     }
                     vehiclePool.erase(iter);
@@ -800,7 +801,7 @@ namespace SEUTraffic {
         roadNet.snapShot();
 
         std::vector<Vehicle> tmp_vehicle;
-        for (auto& v: vehicleMap) {
+        for (auto &v: vehicleMap) {
             tmp_vehicle.push_back(*v.second);
         }
 
@@ -808,10 +809,10 @@ namespace SEUTraffic {
             nextStep();
         std::cout << "predict done\n";
 
-        for(auto &v : tmp_vehicle) {
+        for (auto &v: tmp_vehicle) {
             tmp_vehicleMap[v.getId()]->reset(v);
         }
-        for(auto v : predictVehicles){
+        for (auto v: predictVehicles) {
             delete v;
         }
         predictVehicles.clear();

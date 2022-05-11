@@ -9,7 +9,7 @@ using namespace SEUTraffic;
 int main() {
     std::string configFile = "cityflow_config/test/config.json";
 //    std::string configFile = "cityflow_config/examples/config.json";
-    size_t totalStep = 1000;
+    size_t totalStep = 2000;
     bool fixedTimeTraffic = true;//是否采用固定时长红绿灯
 
     Engine engine(configFile, 8);
@@ -19,7 +19,7 @@ int main() {
         engine.nextStep(fixedTimeTraffic);
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
-            engine.predictPeriod(30);
+//            engine.predictPeriod(30);
         }
     }
     engine.logTrafficStatistics();
