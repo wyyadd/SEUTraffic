@@ -376,7 +376,7 @@ namespace SEUTraffic {
                 for (auto car = laneLink->getVehicles().rbegin(); car != laneLink->getVehicles().rend(); ++car) {
                     if (vehicle->ifCrash(*car)) {
                         if ((*car)->isStopped() && (*car)->getCurDrivable()->getFirstVehicle() == (*car)
-                            && vehicle->getBackedDist() < vehicle->getMinGap()) {
+                            && vehicle->getBackedDist() < vehicle->getMinGap() - 0.3) {
                             vehicle->setDis(currentDist - 0.1);
                         } else
                             vehicle->setDis(currentDist);
