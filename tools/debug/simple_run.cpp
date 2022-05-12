@@ -9,7 +9,7 @@ using namespace SEUTraffic;
 int main() {
     std::string configFile = "cityflow_config/test/config.json";
 //    std::string configFile = "cityflow_config/examples/config.json";
-    size_t totalStep = 2000;
+    size_t totalStep = 1000;
     bool fixedTimeTraffic = true;//是否采用固定时长红绿灯
 
     Engine engine(configFile, 8);

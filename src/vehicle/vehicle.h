@@ -45,6 +45,8 @@ namespace SEUTraffic {
             Vehicle *leader = nullptr;
             bool running = false;
             bool end = false;
+            // 后退距离
+            double backedDist = 0;
         };
 
         Buffer buffer;
@@ -103,6 +105,7 @@ namespace SEUTraffic {
 
         double getSpeed() const { return vehicleInfo.getSpeed(); }
 
+        double getBackedDist() const {return controllerInfo.backedDist;}
         std::string getId() const { return id; }
 
         Drivable *getCurDrivable() const;
@@ -135,10 +138,7 @@ namespace SEUTraffic {
 
         size_t getPriority() const { return priority; }
 
-        void setEnd(bool end) {
-            buffer.end = end;
-            buffer.isEndSet = true;
-        }
+        void setEnd(bool end);
 
         void setPriority(size_t pri) { this->priority = pri; }
 
@@ -156,17 +156,9 @@ namespace SEUTraffic {
             return endTime;
         }
 
-        void setDrivable(Drivable *drivable) {
-            buffer.drivable = drivable;
-            buffer.isDrivableSet = true;
-            ++currentDrivableIndex;
-        }
+        void setDrivable(Drivable *drivable);
 
-        void unsetDrivable(){
-            buffer.drivable = nullptr;
-            buffer.isDrivableSet = false;
-            --currentDrivableIndex;
-        }
+        void unsetDrivable();
 
         bool hasSetStop() const {
             return stopped;
@@ -185,12 +177,14 @@ namespace SEUTraffic {
         // wyy modify: vehicle get points
         Point getPoint() const;
 
+        Point getDir() const;
+
         //yzh modify
         Lane *getCurLane() const;
 
         bool ifCrash(Vehicle *) const;
 
-        void reset(Vehicle &v);
+        void duplicate(Vehicle &v);
     };
 }
 #endif // SEUTRAFFIC_VEHICLE_H
