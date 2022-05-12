@@ -6,21 +6,9 @@
 2. 测试模拟平台：调用已搭建平台的接口，模拟当前主流的交通控制算法，如max-pressure算法，同时与前端协作，实时渲染模拟2D车辆运动，
 为用户提供直观的车流感受和精准的车流信息。
 3. 构建算法模型：对现有的多Agent算法进行总结优化，提出更优的调度算法并搭载在了我们的系统中。  
-
-### 目前存在问题
-1. 重叠问题： 当多条lane进入同一条lane时，可能会因为拥堵产生重叠问题。  
-解决思路：
-    - 后端优化碰撞检测逻辑(完成）
-    - 后端增加waitingBuffer功能， 当车道车辆已满时， 将新增车辆存入waitingBuffer中(完成)
-    - 后端与前端优化车辆渲染与车辆坐标问题。(待完成)
-![重叠问题](https://github.com/wyyadd/SEUTraffic/blob/main/img/overlap.png)
-2. 跨道问题： 在十字路口处， 若laneLink与lane重叠且信号灯能同时放行的话， 直行的车与拐弯的车会发生重叠现象，不会触发碰撞检测。
-解决思路：  
-    - 后端增加Drivable重叠检测判断(已解决)
-    
-![跨道问题解决1](https://github.com/wyyadd/SEUTraffic/blob/main/img/cross_solve1.png)
-![跨道问题解决2](https://github.com/wyyadd/SEUTraffic/blob/main/img/cross_solve2.png)
-
+### 当前工作
+1. 前端视觉效果优化
+2. 后端加入深度强化学习模型算法
 ### 效果展示
 ![效果展示](https://github.com/wyyadd/SEUTraffic/blob/main/img/demo1.gif)
 ![数据展示](https://github.com/wyyadd/SEUTraffic/blob/main/img/demo1.png)
