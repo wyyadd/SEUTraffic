@@ -14,7 +14,7 @@ namespace SEUTraffic {
     private:
         double length = 5;
         double width = 2;
-        double speed = 10;
+        double speed = 5;
         double minGap = 2.5;
         std::shared_ptr<const Router> router = nullptr;
 

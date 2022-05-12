@@ -57,14 +57,15 @@ namespace SEUTraffic {
     void Vehicle::update() {
         if (buffer.isEndSet) {
             controllerInfo.end = buffer.end;
-            if (buffer.end) {
-                controllerInfo.running = false;
-                this->engine->addCumulativeTravelTime(endTime, startTime);
-            } else controllerInfo.running = true;
+            controllerInfo.running = !buffer.end;
             buffer.isEndSet = false;
         }
 
         if (buffer.isDisSet) {
+            if(buffer.dis <= controllerInfo.dis)
+                controllerInfo.backedDist += controllerInfo.dis - buffer.dis;
+            else
+                controllerInfo.backedDist = 0;
             controllerInfo.dis = buffer.dis;
             buffer.isDisSet = false;
         }
@@ -111,6 +112,13 @@ namespace SEUTraffic {
         return info;
     }
 
+    Point Vehicle::getDir() const {
+        if (buffer.isDrivableSet)
+            return buffer.drivable->getDirectionByDistance(buffer.dis);
+        else
+            return controllerInfo.drivable->getDirectionByDistance(buffer.isDisSet ? buffer.dis : controllerInfo.dis);
+    }
+
     Point Vehicle::getPoint() const {
         if (buffer.isDrivableSet)
             return buffer.drivable->getPointByDistance(buffer.dis);
@@ -153,18 +161,12 @@ namespace SEUTraffic {
         if (id == v->getId())
             return false;
         auto point1 = this->getPoint();
-        auto point1_left_up = Point(point1.x - this->getWidth() / 2, point1.y - this->getLen() / 2);
-        auto point1_right_down = Point(point1.x + this->getWidth() / 2, point1.y + this->getLen() / 2);
         auto point2 = v->getPoint();
-        auto point2_left_up = Point(point2.x - v->getWidth() / 2, point2.y - v->getLen() / 2);
-        auto point2_right_down = Point(point2.x + v->getWidth() / 2, point2.y + v->getLen() / 2);
-        if (point1_left_up.x > point2_right_down.x || point1_right_down.x < point2_left_up.x
-            || point1_left_up.y > point2_right_down.y || point1_right_down.y < point2_left_up.y)
-            return false;
-        return true;
+        auto dist = calcDist(point1,point2);
+        return dist < (this->getLen()/2 + v->getLen()/2) * 0.75;
     }
 
-    void Vehicle::reset(Vehicle &v) {
+    void Vehicle::duplicate(Vehicle &v) {
         buffer = v.buffer;
         controllerInfo = v.controllerInfo;
         endTime = v.endTime;
@@ -172,4 +174,26 @@ namespace SEUTraffic {
         stopped = v.isStopped();
         priority = v.getPriority();
     }
+
+    void Vehicle::setDrivable(Drivable *drivable) {
+        controllerInfo.drivable->popFrontVehicle();
+        buffer.drivable = drivable;
+        buffer.isDrivableSet = true;
+        ++currentDrivableIndex;
+    }
+
+    void Vehicle::unsetDrivable() {
+        controllerInfo.drivable->pushFrontVehicle(this);
+        buffer.drivable->popBackVehicle();
+        buffer.drivable = nullptr;
+        buffer.isDrivableSet = false;
+        --currentDrivableIndex;
+    }
+
+    void Vehicle::setEnd(bool end) {
+        buffer.end = end;
+        buffer.isEndSet = true;
+    }
+
+
 }

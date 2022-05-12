@@ -74,7 +74,7 @@ namespace SEUTraffic {
 
         void updateLocation();
 
-        static void updateVehicleDistWithNextDrivable(Vehicle* vehicle, double maxPossibleDist, bool& stopFlag);
+        static void updateVehicleDistWithNextDrivable(Vehicle* vehicle, double maxPossibleDist);
 
         void updateLeaderAndGap();
 

@@ -19,7 +19,7 @@ namespace SEUTraffic {
         std::string result;
         for (const Vehicle *vehicle: getRunningVehicles(true)) {
             Point pos = vehicle->getPoint();
-            Point direction = vehicle->getCurDrivable()->getDirectionByDistance(vehicle->getDistance());
+            Point direction = vehicle->getDir();
             std::string direction_precision_2 = double2string(atan2(direction.y, direction.x));
 //            direction_precision_2 = direction_precision_2.substr(0, direction_precision_2.find('.') + 5);
 
@@ -254,10 +254,11 @@ namespace SEUTraffic {
             double currentDist = vehicle->getDistance();
             double maxPossibleDist = vehiclePair.second;
 
-            bool stopFlag = false;
+//            bool stopFlag = false;
             // current vehicle is leader in this drivable
             if (leader == nullptr || leader->hasSetEnd() || leader->getChangedDrivable() != nullptr) {
                 Drivable *curDrivable = vehicle->getCurDrivable();
+                assert(*curDrivable->getVehicles().begin() == vehicle);
                 Drivable *nextDrivable = vehicle->getNextDrivable();
                 double currentDrivableLength = curDrivable->getLength();
                 double remainDist = currentDrivableLength - maxPossibleDist;
@@ -266,27 +267,28 @@ namespace SEUTraffic {
                     if (remainDist < 0) {
                         vehicle->setEnd(true);
                         vehicle->setEndTime(currentTime + remainDist / vehicle->getSpeed());
+                        curDrivable->pushEndVehicles(vehicle);
                         vehicle->setDrivable(nullptr);
-                        addCumulativeTravelTime(vehicle->getEndTime(), vehicle->getStartTime());
-                        vehicleActiveCount--;
-                        finishedVehicleCnt++;
                     } else { // still on this drivable
                         vehicle->setDis(maxPossibleDist);
                     }
                 } else { // exist next drivable
-                    updateVehicleDistWithNextDrivable(vehicle, maxPossibleDist, stopFlag);
+                    updateVehicleDistWithNextDrivable(vehicle, maxPossibleDist);
                 }
             } else { // has leader
                 vehicle->setDis(std::max(currentDist,
                                          std::min(maxPossibleDist,
                                                   leader->getBufferDist() - leader->getMinGap()
                                                   - leader->getLen() / 2 - vehicle->getLen() / 2)));
-                stopFlag = leader->isStopped();
+//                stopFlag = leader->isStopped();
             }
-
-            if (vehicle->isStopped() && stopFlag)
+            if (vehicle->getBufferDist() == vehicle->getDistance()) {
                 ++cumulativeWaitingTime;
-            vehicle->setStop(stopFlag);
+                vehicle->setStop(true);
+            }
+//            if (vehicle->isStopped() && stopFlag)
+//                ++cumulativeWaitingTime;
+//            vehicle->setStop(stopFlag);
         }
         updateLocationFlag = true;
         startBarrier.wait(); // 等运行完上述的逻辑后，让子线程对包含的vehicle进行删除换道操作
@@ -295,7 +297,7 @@ namespace SEUTraffic {
         endBarrier.wait(); // 先主线程的操作，后子线程操作, 因为子线程要进行删除操作， 主线程不能push已经删除的vehicle
     }
 
-    void Engine::updateVehicleDistWithNextDrivable(Vehicle *vehicle, double maxPossibleDist, bool &stopFlag) {
+    void Engine::updateVehicleDistWithNextDrivable(Vehicle *vehicle, double maxPossibleDist) {
         Drivable *curDrivable = vehicle->getCurDrivable();
         Drivable *nextDrivable = vehicle->getNextDrivable();
         double currentDrivableLength = curDrivable->getLength();
@@ -314,31 +316,31 @@ namespace SEUTraffic {
                 // if red light then stop
                 if (canNotGo) {
                     vehicle->setDis(currentDrivableLength);
-                    stopFlag = true;
+//                    stopFlag = true;
                 } else {
                     vehicle->setDis(-remainDist);
                     vehicle->setDrivable(nextDrivable);
-                    nextDrivable->pushVehicle(vehicle);
+                    nextDrivable->pushBackVehicle(vehicle);
                 }
             }
         } else { // next drivable has vehicles
             bool sameDrivable = next_leader->getFormerDrivable() == curDrivable;
             double safe_distance =
                     (next_leader->hasSetDist() ? next_leader->getBufferDist() : next_leader->getDistance())
-                    - next_leader->getMinGap() - next_leader->getLen() / 2 - vehicle->getLen()/2;
+                    - next_leader->getMinGap() - next_leader->getLen() / 2 - vehicle->getLen() / 2;
             if (remainDist >= 0) { // still on this drivable
                 if (sameDrivable || safe_distance >= 0) {
                     if (remainDist >= -safe_distance) {
                         vehicle->setDis(maxPossibleDist);
                     } else { // sameDrivable && remainDist < -safeDist
                         vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                        stopFlag = next_leader->isStopped();
+//                        stopFlag = next_leader->isStopped();
                     }
                 } else { // differentDrivable and safDist < 0
                     vehicle->setDis(std::max(currentDist,
-                                             std::min(currentDrivableLength - next_leader->getLen()* 1.1,
+                                             std::min(currentDrivableLength - next_leader->getLen() * 1.1,
                                                       maxPossibleDist)));
-                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
+//                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             } else { // less than 0 means will possibly change drivable
                 remainDist = -remainDist;
@@ -348,21 +350,21 @@ namespace SEUTraffic {
                         // if red light then stop
                         if (canNotGo) {
                             vehicle->setDis(currentDrivableLength);
-                            stopFlag = true;
+//                            stopFlag = true;
                         } else {
                             vehicle->setDrivable(nextDrivable);
-                            nextDrivable->pushVehicle(vehicle);
+                            nextDrivable->pushBackVehicle(vehicle);
                             vehicle->setDis(remainDist > safe_distance ? safe_distance : remainDist);
-                            stopFlag = remainDist > safe_distance && next_leader->isStopped();
+//                            stopFlag = remainDist > safe_distance && next_leader->isStopped();
                         }
                     } else { // overlap and cannot change drivable
                         // remainDist > safe_dist && safe_dist < 0
                         vehicle->setDis(std::max(currentDrivableLength + safe_distance, currentDist));
-                        stopFlag = next_leader->isStopped();
+//                        stopFlag = next_leader->isStopped();
                     }
                 } else { // differentDrivable and safDist < 0
                     vehicle->setDis(std::max(currentDrivableLength - next_leader->getLen() * 1.1, currentDist));
-                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
+//                    stopFlag = vehicle->getBufferDist() < maxPossibleDist;
                 }
             }
         }
@@ -373,12 +375,14 @@ namespace SEUTraffic {
             for (auto laneLink: intersection->getLaneLinks()) {
                 for (auto car = laneLink->getVehicles().rbegin(); car != laneLink->getVehicles().rend(); ++car) {
                     if (vehicle->ifCrash(*car)) {
-                        vehicle->setDis(currentDist);
-                        stopFlag = true;
-                        if (vehicle->hasSetDrivable()) {
-                            nextDrivable->popVehicle();
+                        if ((*car)->isStopped() && (*car)->getCurDrivable()->getFirstVehicle() == (*car)
+                            && vehicle->getBackedDist() < vehicle->getMinGap() - 0.3) {
+                            vehicle->setDis(currentDist - 0.1);
+                        } else
+                            vehicle->setDis(currentDist);
+//                        stopFlag = true;
+                        if (vehicle->hasSetDrivable())
                             vehicle->unsetDrivable();
-                        }
                         return;
                     }
                 }
@@ -422,7 +426,7 @@ namespace SEUTraffic {
                 vehicleActiveCount++;
                 totalVehicleCnt++;
                 Vehicle *tail = lane->getLastVehicle();
-                lane->pushVehicle(vehicle);
+                lane->pushBackVehicle(vehicle);
                 vehicle->updateLeaderAndGap(tail);
                 buffer.pop_front();
             }
@@ -523,31 +527,47 @@ namespace SEUTraffic {
         assert(updateLocationFlag == true);
         endBarrier.wait(); // 等待主线程
         for (Drivable *drivable: drivables) {  //这里引用的vehicle从drivable的vehicles中拿出来，updatelocation中是从pushbuffer里引用，源头确实是threadvehiclepool，所以在后面再次遍历的时候vehicle的状态改变
-            auto &vehicles = drivable->getVehicles(); // 为什么要加上&
-            auto vehicleIter = vehicles.begin(); // 这是个指针
-            while (vehicleIter != vehicles.end()) {
-                Vehicle *vehicle = *vehicleIter;
-                if ((vehicle->getChangedDrivable() != nullptr && vehicle->getChangedDrivable() != drivable) ||
-                    vehicle->hasSetEnd()) {
-                    vehicleIter = vehicles.erase(vehicleIter);
-                } else {
-                    vehicleIter++;
-                }
-
-                if (vehicle->hasSetEnd()) { // 在这里就删除车辆，不知道会不会有问题 TODO
-                    std::unique_lock<std::mutex> guard(lock);
+            for (auto vehicle: drivable->getEndVehicles()) {
+                std::unique_lock<std::mutex> guard(lock);
 //                    vehicleRemoveBuffer.insert(vehicle);
-                    vehicleMap.erase(vehicle->getId());
-                    auto iter = vehiclePool.find(vehicle->getPriority());
-                    threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
-                    if (!predictMode) {
-                        delete vehicle;
-                    }
-                    vehiclePool.erase(iter);
-                    guard.unlock();
+                vehicleMap.erase(vehicle->getId());
+                auto iter = vehiclePool.find(vehicle->getPriority());
+                threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
+                vehiclePool.erase(iter);
+                addCumulativeTravelTime(vehicle->getEndTime(), vehicle->getStartTime());
+                vehicleActiveCount--;
+                finishedVehicleCnt++;
+                drivable->getEndVehicles().pop_back();
+                if (!predictMode) {
+                    delete vehicle;
                 }
+                guard.unlock();
             }
         }
+//            auto &vehicles = drivable->getVehicles(); // 为什么要加上&
+//            auto vehicleIter = vehicles.begin(); // 这是个指针
+//            while (vehicleIter != vehicles.end()) {
+//                Vehicle *vehicle = *vehicleIter;
+//                if ((vehicle->getChangedDrivable() != nullptr && vehicle->getChangedDrivable() != drivable) ||
+//                    vehicle->hasSetEnd()) {
+//                    vehicleIter = vehicles.erase(vehicleIter);
+//                } else {
+//                    vehicleIter++;
+//                }
+//
+//                if (vehicle->hasSetEnd()) { // 在这里就删除车辆，不知道会不会有问题
+//                    std::unique_lock<std::mutex> guard(lock);
+////                    vehicleRemoveBuffer.insert(vehicle);
+//                    vehicleMap.erase(vehicle->getId());
+//                    auto iter = vehiclePool.find(vehicle->getPriority());
+//                    threadVehiclePool[iter->second.second].erase(vehicle); //在线程的vehicle池里删去了这个vehicle
+//                    if (!predictMode) {
+//                        delete vehicle;
+//                    }
+//                    vehiclePool.erase(iter);
+//                    guard.unlock();
+//                }
+//            }
 //        endBarrier.wait(); // 等待子线程做完删除后，主线程在进行所有的换道更新
     }
 
@@ -810,7 +830,7 @@ namespace SEUTraffic {
         std::cout << "predict done\n";
 
         for (auto &v: tmp_vehicle) {
-            tmp_vehicleMap[v.getId()]->reset(v);
+            tmp_vehicleMap[v.getId()]->duplicate(v);
         }
         for (auto v: predictVehicles) {
             delete v;

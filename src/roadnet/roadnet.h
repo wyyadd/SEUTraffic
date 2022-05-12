@@ -172,7 +172,9 @@ namespace SEUTraffic {
         double width;
         double maxSpeed;
         std::list<Vehicle *> vehicles;
+        std::vector<Vehicle *> endVehicles;
         std::list<Vehicle *> snapshotVehicles;
+        std::vector<Vehicle *> snapshotEndVehicles;
         DrivableType drivableType;
         // wyy modify: add points
         std::vector<Point> points;
@@ -206,11 +208,17 @@ namespace SEUTraffic {
             return nullptr;
         }
 
-        void pushVehicle(Vehicle *vehicle) {
-            vehicles.push_back(vehicle);
-        }
+        void pushBackVehicle(Vehicle *vehicle) { vehicles.push_back(vehicle); }
 
-        void popVehicle() { vehicles.pop_back(); }
+        void pushFrontVehicle(Vehicle *vehicle) { vehicles.push_front(vehicle); }
+
+        void popBackVehicle() { vehicles.pop_back(); }
+
+        void popFrontVehicle() { vehicles.pop_front(); }
+
+        void pushEndVehicles(Vehicle* v) {endVehicles.push_back(v);}
+
+        std::vector<Vehicle*>& getEndVehicles(){return endVehicles;}
 
         virtual std::string getId() const = 0;
 
@@ -221,9 +229,14 @@ namespace SEUTraffic {
 
         Point getDirectionByDistance(double dis) const;
 
-        void snapshot(){snapshotVehicles = vehicles;}
+        void snapshot() { snapshotVehicles = vehicles; snapshotEndVehicles = endVehicles;}
 
-        void restore(){vehicles = snapshotVehicles; snapshotVehicles.clear();}
+        void restore() {
+            vehicles = snapshotVehicles;
+            endVehicles = snapshotEndVehicles;
+            snapshotVehicles.clear();
+            snapshotEndVehicles.clear();
+        }
     };
 
     class Lane : public Drivable {
@@ -281,9 +294,9 @@ namespace SEUTraffic {
             waitingBuffer.emplace_back(vehicle);
         }
 
-        void waitingBufferSnapshot(){ snapshotWaitingBuffer = waitingBuffer;}
+        void waitingBufferSnapshot() { snapshotWaitingBuffer = waitingBuffer; }
 
-        void waitingBufferRestore(){waitingBuffer = snapshotWaitingBuffer; snapshotWaitingBuffer.clear();}
+        void waitingBufferRestore() {waitingBuffer = snapshotWaitingBuffer; snapshotWaitingBuffer.clear();}
     };
 
     class LaneLink : public Drivable {
