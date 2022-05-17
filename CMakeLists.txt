@@ -56,11 +56,11 @@ include_directories(extern/milo)
 
 add_subdirectory(src)
 # Tests
-find_package(GTest)
-if(GTEST_FOUND)
-    enable_testing()
-    add_subdirectory(test)
-endif()
+#find_package(GTest)
+#if(GTEST_FOUND)
+#    enable_testing()
+#    add_subdirectory(test)
+#endif()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
     add_subdirectory(tools/debug)

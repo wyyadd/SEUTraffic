@@ -25,7 +25,7 @@ namespace SEUTraffic {
 
     Drivable *Vehicle::getNextDrivable() {
         int i = currentDrivableIndex + 1;
-        if (i < this->planned.size()) {
+        if (i < (int)this->planned.size()) {
             return planned[i];
         } else return nullptr;
     }

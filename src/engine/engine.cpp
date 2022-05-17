@@ -174,7 +174,7 @@ namespace SEUTraffic {
             std::cerr << "cannot open flow file!" << std::endl;
             return false;
         }
-        int flowIndex = 0;
+//        int flowIndex = 0;
         std::list<std::string> path;
         try {
             if (!root.IsArray())

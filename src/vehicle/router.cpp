@@ -14,7 +14,7 @@ namespace SEUTraffic {
     std::vector<Drivable *> Router::initRoutePlan() {
         std::vector<Drivable *> planned;
         planned.push_back(getFirstDrivable());
-        for (int i = 0; i < 2 * route.size() - 2; i++) {
+        for (int i = 0; i < 2 * (int)route.size() - 2; i++) {
             auto drivable = getNextDrivable(planned[i], i / 2);
             planned.push_back(drivable);
         }
