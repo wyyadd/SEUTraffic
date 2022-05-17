@@ -1,0 +1,124 @@
+body{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 50px;
+}
+
+.box{
+    width: 1000px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 10px 10px 5px rgba(77, 76, 76, 0.966) /*blur值为5px*/ 
+}
+
+.control-box{
+    margin-left: 50px;
+}
+
+input[type=range] {
+    width: 70%;
+    height: 15px;
+    margin-top: 30px;
+  }
+
+  
+.canvas{
+    margin: 0;
+    padding: 0;
+}
+
+#btn-submit{
+    margin-top: 30px;
+    width: 180px;
+    height: 40px;
+}
+
+.chart-box{
+    width: 1000px;
+    height :500px;
+    margin-top: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#line-chart-box{
+    height: 400px;
+    width: 900px;
+}
+
+.custom-file{
+    position: relative;
+    width: 90%!important;
+    height: 20px;
+    margin-top: 20px;
+}
+
+.file-label{
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    height: 30px;
+    padding-left: 5px;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.file-label::after{
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: block;
+    height: 32px;
+    padding-left: 5px;
+    line-height: 1.5;
+    color: #495057;
+    content: "Browse";
+    background-color: #e9ecef;
+    border-left: 1px solid #ced4da;
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+#replay_roadnet_input, #replay_input, #replay_statistics_input{
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: calc(2.25rem + 2px);
+    margin: 0;
+    opacity: 0;
+}
+
+.control-step-box{
+    margin-top: 30px;
+}
+
+.pause-btn{
+    width: 35%;
+    height: 35px;
+}
+
+#bing-chart-box{
+    width: 500px;
+    height: 500px;
+}
+
+.other-chart-box{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#other-chart{
+    margin-bottom: 50px;
+}

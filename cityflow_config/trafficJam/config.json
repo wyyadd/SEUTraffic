@@ -1,0 +1,12 @@
+{
+    "interval": 1,
+    "seed": 1123,
+    "dir": "/home/wyyadd/SRTP/SEUTraffic/cityflow_config/trafficJam/",
+    "roadnetFile": "roadnet.json",
+    "flowFile": "flow.json",
+    "rlTrafficLight": true,
+    "laneChange": false,
+    "saveReplay": true,
+    "roadnetLogFile": "replay_roadnet.json",
+    "replayLogFile": "replay.txt"
+}

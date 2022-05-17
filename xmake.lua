@@ -1,0 +1,26 @@
+set_project("SEUTraffic")
+set_version("1.0.0")
+set_xmakever("2.6.5")
+set_languages("cxx11")
+
+add_rules("mode.debug", "mode.release")
+add_requires("vcpkg::gtest", {optional = true})
+
+target("SEUTraffic_lib")
+    set_kind("shared")
+    add_syslinks("pthread")
+    add_files("src/**.cpp|seutraffic.cpp")
+    add_includedirs("src", {public = true})
+    add_includedirs("extern/rapidjson/include", {public = true})
+    add_includedirs("extern/milo", {public = true})
+
+target("simple_run")
+    set_kind("binary")
+    add_files("tools/debug/*.cpp")
+    add_deps("SEUTraffic_lib")
+
+target("test")
+    add_packages("vcpkg::gtest")
+    set_kind("binary")
+    add_files("test/cpp/*.cpp")
+    add_deps("SEUTraffic_lib")
