@@ -42,13 +42,16 @@
                     <label class="file-label">replay.txt</label>
                 </div>
                 <button type="button" id="btn-submit" class="btn btn-outline-secondary">开始模拟</button>
+                <button type="button" id="btn-submit2" class="btn btn-outline-secondary">展示模拟数据</button>
                 <div class="col-10">
                     <input type="range" class="custom-range" id="replay-control" value="1" min="1" max="20" onchange="changeV()">
                 </div>
                 <div class="control-step-box">
                     <div class="last-step"></div>
                     <div class="pause">
+                        <button type="button"  class="btn btn-outline-secondary" id='goback'> < </button>
                         <button type="button"  class="btn btn-outline-secondary" id='pause'>暂 停</button>
+                        <button type="button"  class="btn btn-outline-secondary" id='goahead'> > </button>
                     </div>
                     <div class="next-step"></div>
                 </div>
@@ -59,8 +62,9 @@
             <div id="line-chart-box"></div>
         </div>
         <div class="other-chart-box">
-                <div id="bing-chart-box"></div>
-            </div>
+            <div id="bing-chart-box"></div>
+            <button type="button" id="btn-submit3" class="btn btn-outline-secondary">关闭模拟数据</button>
+        </div>
         <script>    
             TRAFFIC_LIGHT_WIDTH = 3;
             LANE_BORDER_WIDTH = 1;
@@ -142,6 +146,13 @@
 			//绑定提交事件,绘制静态地图
 			document.getElementById('btn-submit').addEventListener('click', submitUpload);
 
+            function close_statistics() {
+                document.getElementById('line-chart-box').style.display = 'none'
+                document.getElementById('bing-chart-box').style.display = 'none'
+                document.getElementById('btn-submit3').style.display = 'none'
+            }
+            document.getElementById('btn-submit3').addEventListener('click', close_statistics);
+
             //处理统计数据文件
             function submit_statistics_Upload() {
 				//获得文件列表，注意这里不是数组，而是对象
@@ -157,6 +168,7 @@
                 reader.onload = function () { 
                     stastistic = JSON.parse(this.result)
                     var chart =echarts.init(document.getElementById('line-chart-box'));
+                    document.getElementById('line-chart-box').style.display = 'block'
                     option1 = {
                     title: {
                         text: '模拟数据展示'
@@ -219,6 +231,8 @@
                     };
                     chart.setOption(option1);
                     var chart2 =echarts.init(document.getElementById('bing-chart-box'));
+                    document.getElementById('bing-chart-box').style.display = 'block'
+                    document.getElementById('btn-submit3').style.display = 'block'
                     option2 = {
                         tooltip: {
                             trigger: 'item'
@@ -268,7 +282,7 @@
                 }
 			}
 			//绑定提交事件,绘制静态地图
-			document.getElementById('btn-submit').addEventListener('click', submit_statistics_Upload);
+			document.getElementById('btn-submit2').addEventListener('click', submit_statistics_Upload);
 
 
             //处理replay.txt文件
@@ -333,6 +347,8 @@
             sprite.position.set(100, 100) */
 
             ispause = 0;
+            isgoback = 0;
+            isgoahead = 0;
 
             function pause(){
                 if(ispause == 0) {
@@ -345,6 +361,16 @@
             }
             document.getElementById('pause').addEventListener('click', pause);
 
+            function goback(){
+                isgoback = 1;
+            }
+            document.getElementById('goback').addEventListener('click', goback);
+
+            function goahead(){
+                isgoahead = 1;
+            }
+            document.getElementById('goahead').addEventListener('click', goahead);
+
 
             function run(delta) {
                 drawStep(cnt);
@@ -353,6 +379,11 @@
                     cnt += 1;
                     frameElapsed=0;
                     if (cnt == totalStep) cnt = 0;
+                } else if (ispause&&(isgoahead || isgoback)){
+                    if(isgoahead) cnt++;
+                    if(isgoback) cnt--;
+                    drawStep(cnt);
+                    isgoahead=isgoback=0;
                 }
             }
 

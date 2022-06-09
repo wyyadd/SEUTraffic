@@ -52,7 +52,7 @@ namespace SEUTraffic {
 
         // 预测模式
         bool predictMode = false;
-        std::vector<Vehicle*> predictVehicles;
+        std::vector<Vehicle *> predictVehicles;
 
         struct Statistics {
             std::vector<int> time;
@@ -74,7 +74,7 @@ namespace SEUTraffic {
 
         void updateLocation();
 
-        static void updateVehicleDistWithNextDrivable(Vehicle* vehicle, double maxPossibleDist);
+        static void updateVehicleDistWithNextDrivable(Vehicle *vehicle, double maxPossibleDist);
 
         void updateLeaderAndGap();
 
@@ -166,6 +166,8 @@ namespace SEUTraffic {
         void addCumulativeTravelTime(double endTime, double startTime);
 
         std::string getLeader(const std::string &vehicleId) const;
+
+        int getInterval() { return interval; }
 
         void logTrafficStatistics();
 
