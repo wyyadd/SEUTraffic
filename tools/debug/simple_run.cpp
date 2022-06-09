@@ -1,5 +1,5 @@
 #include "engine/engine.h"
-#include "algo/maxPressure.cpp"
+#include "algo/DCOP.cpp"
 #include <string>
 #include <iostream>
 #include <ctime>
@@ -13,12 +13,12 @@ int main() {
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
+    DCOP dcop(&engine);
     for (int i = 0; i < (int) totalStep; i++) {
-        engine.nextStep(false);
-        maxPressure(&engine);
+        engine.nextStep(true);
+//        engine.predictPeriod(30);
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
-//            engine.predictPeriod(30);
         }
     }
     engine.logTrafficStatistics();
