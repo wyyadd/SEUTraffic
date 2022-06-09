@@ -37,9 +37,19 @@ input[type=range] {
     height: 40px;
 }
 
+#btn-submit2{
+    margin-top: 30px;
+    width: 180px;
+    height: 40px;
+}
+#btn-submit3{
+    margin-top: 30px;
+    width: 180px;
+    height: 40px;
+    display: none;
+}
+
 .chart-box{
-    width: 1000px;
-    height :500px;
     margin-top: 100px;
     display: flex;
     flex-direction: column;
@@ -49,6 +59,7 @@ input[type=range] {
 #line-chart-box{
     height: 400px;
     width: 900px;
+    display: none;
 }
 
 .custom-file{
@@ -111,6 +122,7 @@ input[type=range] {
 #bing-chart-box{
     width: 500px;
     height: 500px;
+    display: none;
 }
 
 .other-chart-box{

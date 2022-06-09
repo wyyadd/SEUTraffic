@@ -447,22 +447,13 @@ namespace SEUTraffic {
         updateLeaderAndGap();
 
         // update traffic light
-        std::vector<Intersection> &intersections = roadNet.getIntersections();
-        for (auto &intersection: intersections) {
-            if (intersection.isVirtualIntersection())
-                continue;
-            //yzh: TSC:固定时长
-            if (fixedTimeTraffic)
+        if (fixedTimeTraffic) {
+            std::vector<Intersection> &intersections = roadNet.getIntersections();
+            for (auto &intersection: intersections) {
+                if (intersection.isVirtualIntersection())
+                    continue;
                 intersection.getTrafficLight().passTime(interval);
                 //yzh: TSC：maxPressure算法
-            else {
-                if (!intersection.getTrafficLight().changePhase(interval)) {
-                    intersection.getTrafficLight().passTime(interval);
-                } else {
-                    int bestPhase = intersection.getMaxpressurePhase();
-//                    std::cout<<"bestPhase: "<<bestPhase<<std::endl;
-                    intersection.getTrafficLight().setPhase(bestPhase);
-                }
             }
         }
 

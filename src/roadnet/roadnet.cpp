@@ -91,7 +91,32 @@ namespace SEUTraffic {
 
                 roads[i].startIntersection = interMap[getJsonMember<const char *>("startIntersection", curRoadValue)];
                 roads[i].endIntersection = interMap[getJsonMember<const char *>("endIntersection", curRoadValue)];
-
+                switch (roads[i].getId().back() - '0') {
+                    case 0:{ // east
+                        roads[i].startIntersection->neighbours.eastNeighbour = roads[i].endIntersection;
+                        roads[i].endIntersection->neighbours.westNeighbour= roads[i].startIntersection;
+                        break;
+                    }
+                    case 1:{ // north
+                        roads[i].startIntersection->neighbours.northNeighbour= roads[i].endIntersection;
+                        roads[i].endIntersection->neighbours.southNeighbour= roads[i].startIntersection;
+                        break;
+                    }
+                    case 2:{ // west
+                        roads[i].startIntersection->neighbours.westNeighbour= roads[i].endIntersection;
+                        roads[i].endIntersection->neighbours.eastNeighbour= roads[i].startIntersection;
+                        break;
+                    }
+                    case 3:{ // south
+                        roads[i].startIntersection->neighbours.southNeighbour= roads[i].endIntersection;
+                        roads[i].endIntersection->neighbours.northNeighbour= roads[i].startIntersection;
+                        break;
+                    }
+                    default: {
+                        std::cerr << "road direction error";
+                        exit(1);
+                    }
+                }
                 //check
                 if (!roads[i].startIntersection) throw JsonFormatError("startIntersection does not exist");
                 if (!roads[i].endIntersection) throw JsonFormatError("endIntersection does not exist.");
@@ -163,6 +188,10 @@ namespace SEUTraffic {
                         throw JsonFormatError("No such road: " + roadName);
                     }
                     intersections[i].roads.push_back(roadMap[roadName]);
+                    if (roadMap[roadName]->startIntersection == &intersections[i])
+                        intersections[i].outRoads.push_back(roadMap[roadName]);
+                    else
+                        intersections[i].inRoads.push_back(roadMap[roadName]);
                     path.pop_back();
                 }
 
@@ -410,51 +439,6 @@ namespace SEUTraffic {
         }
         jsonRoot.AddMember("edges", jsonEdges, allocator);
         return jsonRoot;
-    }
-
-    int Intersection::getMaxpressurePhase() {
-        double maxPressure = -0x3f3f3f;
-        double incomings = 0;
-        double outcomings = 0;
-        int bestPhaseIndex = 0;
-
-        for (LightPhase phase: trafficLight.getPhases()) {
-            incomings = 0;
-            outcomings = 0;
-            std::vector<bool> roadLinkAvailable = phase.getRoadLinkAvailable();
-            std::set<Lane *> startLanes;
-            std::set<Lane *> endLanes;
-
-            for (RoadLink rlink: roadLinks) { // 这里的逻辑写错了
-                if (roadLinkAvailable[rlink.getIndex()]) {
-                    for (auto &lanelink: rlink.getLaneLinks()) {
-                        Lane *stlane = lanelink.getStartLane();
-                        Lane *edlane = lanelink.getEndLane();
-                        startLanes.insert(stlane);
-                        endLanes.insert(edlane);
-                    }
-                }
-            }
-
-            for (auto stLane: startLanes) {
-                int incomingCars = stLane->getVehicleCnt();
-                incomings += incomingCars;
-            }
-
-            for (auto edLane: endLanes) {
-                int outcomingcars = edLane->getVehicleCnt();
-                outcomings += outcomingcars;
-            }
-            double pressure = incomings - outcomings;
-
-            if (pressure > maxPressure) {
-                maxPressure = pressure;
-                bestPhaseIndex = phase.getPhaseIndex();
-            }
-            startLanes.clear();
-            endLanes.clear();
-        }
-        return bestPhaseIndex;
     }
 
     void RoadNet::reset() {
@@ -748,16 +732,16 @@ namespace SEUTraffic {
     }
 
     void RoadNet::snapShot() {
-       for(auto d : drivables)
-           d->snapshot();
-       for(auto l : lanes)
-           l->waitingBufferSnapshot();
+        for (auto d: drivables)
+            d->snapshot();
+        for (auto l: lanes)
+            l->waitingBufferSnapshot();
     }
 
     void RoadNet::restore() {
-        for(auto d : drivables)
+        for (auto d: drivables)
             d->restore();
-        for(auto l : lanes)
+        for (auto l: lanes)
             l->waitingBufferRestore();
     }
 }

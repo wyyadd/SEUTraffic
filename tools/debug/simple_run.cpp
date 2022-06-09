@@ -1,5 +1,5 @@
 #include "engine/engine.h"
-
+#include "algo/maxPressure.cpp"
 #include <string>
 #include <iostream>
 #include <ctime>
@@ -10,13 +10,12 @@ int main() {
     std::string configFile = "/home/wyyadd/SRTP/SEUTraffic/cityflow_config/trafficJam/config.json";
 //    std::string configFile = "cityflow_config/examples/config.json";
     size_t totalStep = 1000;
-    bool fixedTimeTraffic = true;//是否采用固定时长红绿灯
-
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
     for (int i = 0; i < (int) totalStep; i++) {
-        engine.nextStep(fixedTimeTraffic);
+        engine.nextStep(false);
+        maxPressure(&engine);
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
 //            engine.predictPeriod(30);

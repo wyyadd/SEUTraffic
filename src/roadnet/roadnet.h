@@ -47,6 +47,15 @@ namespace SEUTraffic {
         std::vector<LaneLink *> laneLinks;
         Point point;
 
+        std::vector<Road *> inRoads;
+        std::vector<Road *> outRoads;
+        struct {
+            Intersection *northNeighbour = nullptr;
+            Intersection *southNeighbour = nullptr;
+            Intersection *westNeighbour = nullptr;
+            Intersection *eastNeighbour = nullptr;
+        } neighbours;
+
     public:
         std::string getId() const { return this->id; }
 
@@ -69,8 +78,6 @@ namespace SEUTraffic {
         void reset();
 
         RoadLink getRoadLink(Road *lastRoad, Road *curRoad);
-
-        int getMaxpressurePhase();
 
         bool isImplicitIntersection() { return trafficLight.getPhases().size() <= 1; }
 
@@ -216,9 +223,9 @@ namespace SEUTraffic {
 
         void popFrontVehicle() { vehicles.pop_front(); }
 
-        void pushEndVehicles(Vehicle* v) {endVehicles.push_back(v);}
+        void pushEndVehicles(Vehicle *v) { endVehicles.push_back(v); }
 
-        std::vector<Vehicle*>& getEndVehicles(){return endVehicles;}
+        std::vector<Vehicle *> &getEndVehicles() { return endVehicles; }
 
         virtual std::string getId() const = 0;
 
@@ -229,7 +236,10 @@ namespace SEUTraffic {
 
         Point getDirectionByDistance(double dis) const;
 
-        void snapshot() { snapshotVehicles = vehicles; snapshotEndVehicles = endVehicles;}
+        void snapshot() {
+            snapshotVehicles = vehicles;
+            snapshotEndVehicles = endVehicles;
+        }
 
         void restore() {
             vehicles = snapshotVehicles;
@@ -296,7 +306,10 @@ namespace SEUTraffic {
 
         void waitingBufferSnapshot() { snapshotWaitingBuffer = waitingBuffer; }
 
-        void waitingBufferRestore() {waitingBuffer = snapshotWaitingBuffer; snapshotWaitingBuffer.clear();}
+        void waitingBufferRestore() {
+            waitingBuffer = snapshotWaitingBuffer;
+            snapshotWaitingBuffer.clear();
+        }
     };
 
     class LaneLink : public Drivable {
