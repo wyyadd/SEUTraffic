@@ -11,6 +11,7 @@
 #include <cmath>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <queue>
 #include <iostream>
 
@@ -43,18 +44,18 @@ namespace SEUTraffic {
         double width = 0.0;
         TrafficLight trafficLight;
         std::vector<Road *> roads;
-        std::vector<RoadLink> roadLinks; // todo: why not use * here
+        std::vector<RoadLink> roadLinks;
         std::vector<LaneLink *> laneLinks;
         Point point;
 
         std::vector<Road *> inRoads;
         std::vector<Road *> outRoads;
-        struct {
-            Intersection *northNeighbour = nullptr;
-            Intersection *southNeighbour = nullptr;
-            Intersection *westNeighbour = nullptr;
-            Intersection *eastNeighbour = nullptr;
-        } neighbours;
+
+    public:
+        Intersection* neighbours[4];
+        enum Direction {
+            East = 0, North = 1, West = 2, South = 3
+        };
 
     public:
         std::string getId() const { return this->id; }
@@ -86,6 +87,8 @@ namespace SEUTraffic {
 
         const Point &getPosition() const { return point; }//yzh:获取Intersection中心点的坐标
 
+        std::vector<Road*>& getInRoads() {return inRoads;}
+        std::vector<Road*>& getOutRoads() {return outRoads;}
     };
 
     class Road {
@@ -122,10 +125,12 @@ namespace SEUTraffic {
 
         // wyy modify: log
         double averageLength() const;
+
+        unsigned long getVehicleCnt();
     };
 
     enum RoadLinkType {
-        go_straight = 3, turn_left = 2, turn_right = 1
+        go_straight = 0, turn_left = 1, turn_right = 2
     };
 
     class RoadLink {
@@ -162,8 +167,11 @@ namespace SEUTraffic {
 
         void reset();
 
-        int getIndex() { return index; }
+        int getIndex() const { return index; }
 
+        RoadLinkType getRoadLinkType() { return type; }
+
+        unsigned long getVehicleCnt() const;
     };
 
     class Drivable {
@@ -179,12 +187,16 @@ namespace SEUTraffic {
         double width;
         double maxSpeed;
         std::list<Vehicle *> vehicles;
+        // endVehicles store vehicle reaching end, delete when updateLocation function
         std::vector<Vehicle *> endVehicles;
-        std::list<Vehicle *> snapshotVehicles;
-        std::vector<Vehicle *> snapshotEndVehicles;
         DrivableType drivableType;
         // wyy modify: add points
         std::vector<Point> points;
+
+        struct SnapshotBuffer{
+            std::list<Vehicle *> vehicles;
+            std::vector<Vehicle *> endVehicles;
+        } snapshotBuffer;
 
     public:
         virtual ~Drivable() = default;
@@ -237,15 +249,14 @@ namespace SEUTraffic {
         Point getDirectionByDistance(double dis) const;
 
         void snapshot() {
-            snapshotVehicles = vehicles;
-            snapshotEndVehicles = endVehicles;
+            snapshotBuffer.endVehicles = endVehicles;
+            snapshotBuffer.vehicles = vehicles;
         }
 
         void restore() {
-            vehicles = snapshotVehicles;
-            endVehicles = snapshotEndVehicles;
-            snapshotVehicles.clear();
-            snapshotEndVehicles.clear();
+            vehicles = snapshotBuffer.vehicles;
+            endVehicles = snapshotBuffer.endVehicles;
+            snapshotBuffer = SnapshotBuffer();
         }
     };
 
@@ -259,9 +270,10 @@ namespace SEUTraffic {
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
         std::deque<Vehicle *> waitingBuffer;
-        std::deque<Vehicle *> snapshotWaitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
-
+        struct LaneSnapshotBuffer{
+            std::deque<Vehicle *> waitingBuffer;
+        } laneSnapshotBuffer;
     public:
         Lane();
 
@@ -304,12 +316,14 @@ namespace SEUTraffic {
             waitingBuffer.emplace_back(vehicle);
         }
 
-        void waitingBufferSnapshot() { snapshotWaitingBuffer = waitingBuffer; }
+        void waitingBufferSnapshot() { laneSnapshotBuffer.waitingBuffer = waitingBuffer; }
 
         void waitingBufferRestore() {
-            waitingBuffer = snapshotWaitingBuffer;
-            snapshotWaitingBuffer.clear();
+            waitingBuffer = laneSnapshotBuffer.waitingBuffer;
+            laneSnapshotBuffer = LaneSnapshotBuffer();
         }
+
+        size_t getWaitingBufferCnt() const { return waitingBuffer.size(); }
     };
 
     class LaneLink : public Drivable {

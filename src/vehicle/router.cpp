@@ -8,7 +8,6 @@
 namespace SEUTraffic {
     Router::Router(std::vector<Road *> roads, std::vector<Intersection *> inters)
             : route(std::move(roads)), inters(std::move(inters)) {
-        srand((unsigned) time(nullptr));
     }
 
     std::vector<Drivable *> Router::initRoutePlan() {
@@ -69,6 +68,7 @@ namespace SEUTraffic {
     size_t Router::selectLaneIndex(const Lane *curLane, const std::vector<Lane *> &lanes) {
         assert(!lanes.empty());
         if (curLane == nullptr) {
+            srand(time(nullptr));
             size_t index = rand() % lanes.size();
             return index;
         }

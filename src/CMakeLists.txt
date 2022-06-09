@@ -10,7 +10,7 @@ set(PROJECT_HEADER_FILES
         vehicle/router.h
         vehicle/vehicle.h
         vehicle/vehicleInfo.h
-        )
+        algo/DSA/DSA_Agent.h)
 
 set(PROJECT_SOURCE_FILES
         utility/utility.cpp
@@ -23,7 +23,8 @@ set(PROJECT_SOURCE_FILES
         vehicle/vehicle.cpp
         vehicle/vehicleInfo.cpp
         algo/maxPressure.cpp
-        )
+        algo/DSA/AgentCenter.cpp
+        algo/DSA/DSA_Agent.cpp)
 
 set(PROJECT_LIB_NAME ${PROJECT_NAME}_lib CACHE INTERNAL "")
 

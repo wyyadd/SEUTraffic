@@ -230,7 +230,6 @@ namespace SEUTraffic {
     }
 
     void Engine::vehicleControl(Vehicle &vehicle) {
-        //todo
     }
 
     void Engine::getAction() {
@@ -453,7 +452,7 @@ namespace SEUTraffic {
                 if (intersection.isVirtualIntersection())
                     continue;
                 intersection.getTrafficLight().passTime(interval);
-                //yzh: TSC：maxPressure算法
+                //yzh: TSC：maxPressure算法.
             }
         }
 
@@ -798,49 +797,51 @@ namespace SEUTraffic {
         if (period < 1)
             return;
         predictMode = true;
-        auto tmp_vehiclePool = vehiclePool;
-        auto tmp_vehicleMap = vehicleMap;
-        auto tmp_threadVehiclePool = threadVehiclePool;
-        auto tmp_flow = flows;
-        size_t tmp_steps = steps;
-        int tmp_finishedVehicleCnt = finishedVehicleCnt;
-        int tmp_vehicleActiveCount = vehicleActiveCount;
-        int tmp_totalVehicleCnt = totalVehicleCnt;
-        int tmp_currentTime = currentTime;
-        double tmp_cumulativeTravelTime = cumulativeTravelTime;
-        double tmp_cumulativeWaitingTime = cumulativeWaitingTime;
+        snapshotBuffer.vehiclePool = vehiclePool;
+        snapshotBuffer.vehicleMap = vehicleMap;
+        snapshotBuffer.threadVehiclePool = threadVehiclePool;
+        snapshotBuffer.flows = flows;
+        snapshotBuffer.steps = steps;
+        snapshotBuffer.finishedVehicleCnt = finishedVehicleCnt;
+        snapshotBuffer.vehicleActiveCount = vehicleActiveCount;
+        snapshotBuffer.totalVehicleCnt = totalVehicleCnt;
+        snapshotBuffer.currentTime = currentTime;
+        snapshotBuffer.cumulativeTravelTime = cumulativeTravelTime;
+        snapshotBuffer.cumulativeWaitingTime = cumulativeWaitingTime;
         roadNet.snapShot();
-
         std::vector<Vehicle> tmp_vehicle;
         for (auto &v: vehicleMap) {
             tmp_vehicle.push_back(*v.second);
         }
+        snapshotBuffer.tmp_vehicle = std::move(tmp_vehicle);
 
         for (int i = 0; i < period; ++i)
             nextStep();
-        std::cout << "predict done\n";
+    }
 
-        for (auto &v: tmp_vehicle) {
-            tmp_vehicleMap[v.getId()]->duplicate(v);
+    void Engine::stopPredict() {
+        for (auto &v: snapshotBuffer.tmp_vehicle) {
+            snapshotBuffer.vehicleMap[v.getId()]->duplicate(v);
         }
         for (auto v: predictVehicles) {
             delete v;
         }
         predictVehicles.clear();
 
-        vehiclePool = tmp_vehiclePool;
-        vehicleMap = tmp_vehicleMap;
-        threadVehiclePool = tmp_threadVehiclePool;
-        flows = tmp_flow;
-        steps = tmp_steps;
-        finishedVehicleCnt = tmp_finishedVehicleCnt;
-        vehicleActiveCount = tmp_vehicleActiveCount;
-        totalVehicleCnt = tmp_totalVehicleCnt;
-        currentTime = tmp_currentTime;
-        cumulativeTravelTime = tmp_cumulativeTravelTime;
-        cumulativeWaitingTime = tmp_cumulativeWaitingTime;
+        vehiclePool = snapshotBuffer.vehiclePool;
+        vehicleMap = snapshotBuffer.vehicleMap;
+        threadVehiclePool = snapshotBuffer.threadVehiclePool;
+        flows = snapshotBuffer.flows;
+        steps = snapshotBuffer.steps;
+        finishedVehicleCnt = snapshotBuffer.finishedVehicleCnt;
+        vehicleActiveCount = snapshotBuffer.vehicleActiveCount;
+        totalVehicleCnt = snapshotBuffer.totalVehicleCnt;
+        currentTime = snapshotBuffer.currentTime;
+        cumulativeTravelTime = snapshotBuffer.cumulativeTravelTime;
+        cumulativeWaitingTime = snapshotBuffer.cumulativeWaitingTime;
         roadNet.restore();
         predictMode = false;
+        snapshotBuffer = SnapshotBuffer();
     }
 
 }

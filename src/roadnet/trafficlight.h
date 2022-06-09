@@ -41,10 +41,14 @@ namespace SEUTraffic {
         std::vector<int> roadLinkIndices;
         double remainDuration = 0.0;
         int curPhaseIndex = 0;
+        struct SnapshotBuffer {
+            double remainDuration = 0.0;
+            int curPhaseIndex = 0;
+        } snapshotBuffer;
     public:
         void init(int initPhaseIndex);
 
-        int getCurrentPhaseIndex();
+        int getCurrentPhaseIndex() const;
 
         LightPhase &getCurrentPhase();
 
@@ -61,6 +65,17 @@ namespace SEUTraffic {
         void setPhase(int phaseIndex);
 
         void reset();
+
+        void snapshot() {
+            snapshotBuffer.remainDuration = remainDuration;
+            snapshotBuffer.curPhaseIndex = curPhaseIndex;
+        }
+
+        void restore() {
+            remainDuration = snapshotBuffer.remainDuration;
+            curPhaseIndex = snapshotBuffer.curPhaseIndex;
+            snapshotBuffer = SnapshotBuffer();
+        }
     };
 }
 #endif // SEUTRAFFIC_TRAFFICLIGHT_H
