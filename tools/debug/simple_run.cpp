@@ -13,7 +13,6 @@ int main() {
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
-    DCOP dcop(&engine);
     for (int i = 0; i < (int) totalStep; i++) {
         engine.nextStep(true);
 //        engine.predictPeriod(30);
@@ -21,6 +20,7 @@ int main() {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
         }
     }
+    DCOP dcop(&engine);
     engine.logTrafficStatistics();
     time(&endTime);
     std::cout << "Total Step: " << totalStep << std::endl;

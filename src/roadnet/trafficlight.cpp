@@ -9,7 +9,7 @@ namespace SEUTraffic {
         this->remainDuration = phases[initPhaseIndex].time;
     }
 
-    int TrafficLight::getCurrentPhaseIndex() {
+    int TrafficLight::getCurrentPhaseIndex() const {
         return this->curPhaseIndex;
     }
 

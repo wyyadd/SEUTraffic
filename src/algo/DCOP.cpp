@@ -21,8 +21,8 @@ private:
 
     void generateGraph() {
         for (auto i = 0; i < (int) engine->getRoadnet().getIntersections().size(); ++i) {
-            interMap[engine->getRoadnet().getIntersections()[i].getId()] = i;
-            numberMap[i] = engine->getRoadnet().getIntersections()[i].getId();
+            interMap[agents[i].getId()] = i;
+            numberMap[i] = agents[i].getId();
         }
         graph.resize(interMap.size(), vector<int>(interMap.size(), 0));
         for (auto &road: engine->getRoadnet().getRoads()) {
@@ -105,6 +105,9 @@ public:
     explicit DCOP(Engine *engine) {
         this->engine = engine;
         agents = engine->getRoadnet().getIntersections();
+        auto x = agents[3].getRoadLinkTraffic();
+        auto y = agents[3].getInRoadsTraffic();
+        auto z = agents[3].getOutRoadsTraffic();
         generateGraph();
     }
 };

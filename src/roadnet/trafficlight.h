@@ -44,7 +44,7 @@ namespace SEUTraffic {
     public:
         void init(int initPhaseIndex);
 
-        int getCurrentPhaseIndex();
+        int getCurrentPhaseIndex() const;
 
         LightPhase &getCurrentPhase();
 

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <list>
 #include <map>
+#include <unordered_map>
 #include <queue>
 #include <iostream>
 
@@ -43,7 +44,7 @@ namespace SEUTraffic {
         double width = 0.0;
         TrafficLight trafficLight;
         std::vector<Road *> roads;
-        std::vector<RoadLink> roadLinks; // todo: why not use * here
+        std::vector<RoadLink> roadLinks;
         std::vector<LaneLink *> laneLinks;
         Point point;
 
@@ -85,6 +86,12 @@ namespace SEUTraffic {
         std::vector<Point> getOutline();//yzh:获取Intersection的外轮廓点的坐标
 
         const Point &getPosition() const { return point; }//yzh:获取Intersection中心点的坐标
+
+        std::unordered_map<int, int> getRoadLinkTraffic();
+
+        std::unordered_map<std::string, int> getInRoadsTraffic();
+
+        std::unordered_map<std::string, int> getOutRoadsTraffic();
 
     };
 
@@ -162,7 +169,7 @@ namespace SEUTraffic {
 
         void reset();
 
-        int getIndex() { return index; }
+        int getIndex() const { return index; }
 
     };
 
@@ -179,6 +186,7 @@ namespace SEUTraffic {
         double width;
         double maxSpeed;
         std::list<Vehicle *> vehicles;
+        // endVehicles store vehicle reaching end, delete when updateLocation function
         std::vector<Vehicle *> endVehicles;
         std::list<Vehicle *> snapshotVehicles;
         std::vector<Vehicle *> snapshotEndVehicles;
@@ -310,6 +318,8 @@ namespace SEUTraffic {
             waitingBuffer = snapshotWaitingBuffer;
             snapshotWaitingBuffer.clear();
         }
+
+        size_t getWaitingBufferCnt() const {return waitingBuffer.size();}
     };
 
     class LaneLink : public Drivable {
