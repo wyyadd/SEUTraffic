@@ -319,7 +319,7 @@ namespace SEUTraffic {
             snapshotWaitingBuffer.clear();
         }
 
-        size_t getWaitingBufferCnt() const {return waitingBuffer.size();}
+        size_t getWaitingBufferCnt() const { return waitingBuffer.size(); }
     };
 
     class LaneLink : public Drivable {

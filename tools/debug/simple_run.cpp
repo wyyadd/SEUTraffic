@@ -1,5 +1,5 @@
 #include "engine/engine.h"
-#include "algo/DCOP.cpp"
+#include "algo/DSA/Controller.cpp"
 #include <string>
 #include <iostream>
 #include <ctime>
@@ -7,9 +7,9 @@
 using namespace SEUTraffic;
 
 int main() {
-    std::string configFile = "/home/wyyadd/SRTP/SEUTraffic/cityflow_config/trafficJam/config.json";
-//    std::string configFile = "cityflow_config/examples/config.json";
-    size_t totalStep = 1000;
+//    std::string configFile = "cityflow_config/trafficJam/config.json";
+    std::string configFile = "cityflow_config/syn_4x4/config.json";
+    size_t totalStep = 10;
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
@@ -20,7 +20,7 @@ int main() {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
         }
     }
-    DCOP dcop(&engine);
+    ALGO::Controller dcop(engine);
     engine.logTrafficStatistics();
     time(&endTime);
     std::cout << "Total Step: " << totalStep << std::endl;

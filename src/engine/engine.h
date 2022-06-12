@@ -133,7 +133,7 @@ namespace SEUTraffic {
 
         void setTrafficLightPhase(std::string id, int phaseIndex);
 
-        RoadNet getRoadnet() {
+        RoadNet& getRoadnet() {
             return roadNet;
         }
 
