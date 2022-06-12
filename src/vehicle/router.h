@@ -28,7 +28,6 @@ namespace SEUTraffic {
 
         // TODO 看之后用不用， 不用就删了
         std::vector<Intersection *> inters;
-
     public:
         Router(std::vector<Road *> roads, std::vector<Intersection *> inters);
 
