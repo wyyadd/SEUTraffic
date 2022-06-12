@@ -13,22 +13,31 @@
 namespace ALGO {
     using SEUTraffic::Intersection;
     using std::string;
+    using std::pair;
 
     struct Message {
         int agentId;
         int message;
     };
 
-    class DSA_Agent :public Intersection{
+    enum MovementPhases {
+        WE_Straight = 0, WE_Left = 1, SN_Straight = 2, SN_Left = 3
+    };
+
+    class DSA_Agent : public Intersection {
     private:
         int agentId;
         std::deque<Message> receivedMessage;
-        std::vector<DSA_Agent*> inAgents;
-        std::vector<DSA_Agent*> outAgents;
+        std::vector<DSA_Agent *> inAgents;
+        std::vector<DSA_Agent *> outAgents;
+    private:
+        double getCost(Direction direction, MovementPhases movementPhase);
+        double getCost(MovementPhases movementPhase, Intersection* neighbour);
     public:
-        DSA_Agent(int id, Intersection *intersection) : Intersection(*intersection), agentId(id) {}
-
-//        string getId() const {return intersection->getId();}
+        DSA_Agent(int id, Intersection *intersection) : Intersection(*intersection), agentId(id) {
+            inAgents.resize(4, nullptr);
+            outAgents.resize(4, nullptr);
+        }
 
         int getAgentId() const { return agentId; }
 
@@ -36,9 +45,11 @@ namespace ALGO {
 
         static void sendMessage(Message message, DSA_Agent *neighbour);
 
-        void updateInAgents(DSA_Agent* agent){inAgents.push_back(agent);}
+        void updateInAgents(DSA_Agent *agent);
 
-        void updateOutAgents(DSA_Agent* agent){outAgents.push_back(agent);}
+        void updateOutAgents(DSA_Agent *agent);
+
+        double getCost(MovementPhases movementPhase);
     };
 } // ALGO
 

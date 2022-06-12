@@ -91,32 +91,8 @@ namespace SEUTraffic {
 
                 roads[i].startIntersection = interMap[getJsonMember<const char *>("startIntersection", curRoadValue)];
                 roads[i].endIntersection = interMap[getJsonMember<const char *>("endIntersection", curRoadValue)];
-                switch (roads[i].getId().back() - '0') {
-                    case 0: { // east
-                        roads[i].startIntersection->neighbours.eastNeighbour = roads[i].endIntersection;
-                        roads[i].endIntersection->neighbours.westNeighbour = roads[i].startIntersection;
-                        break;
-                    }
-                    case 1: { // north
-                        roads[i].startIntersection->neighbours.northNeighbour = roads[i].endIntersection;
-                        roads[i].endIntersection->neighbours.southNeighbour = roads[i].startIntersection;
-                        break;
-                    }
-                    case 2: { // west
-                        roads[i].startIntersection->neighbours.westNeighbour = roads[i].endIntersection;
-                        roads[i].endIntersection->neighbours.eastNeighbour = roads[i].startIntersection;
-                        break;
-                    }
-                    case 3: { // south
-                        roads[i].startIntersection->neighbours.southNeighbour = roads[i].endIntersection;
-                        roads[i].endIntersection->neighbours.northNeighbour = roads[i].startIntersection;
-                        break;
-                    }
-                    default: {
-                        std::cerr << "road direction error";
-                        exit(1);
-                    }
-                }
+                roads[i].startIntersection->neighbours[roads[i].getId().back() - '0'] = roads[i].endIntersection;
+                roads[i].endIntersection->neighbours[(roads[i].getId().back() - '0' + 2) % 4] = roads[i].startIntersection;
                 //check
                 if (!roads[i].startIntersection) throw JsonFormatError("startIntersection does not exist");
                 if (!roads[i].endIntersection) throw JsonFormatError("endIntersection does not exist.");
@@ -676,6 +652,13 @@ namespace SEUTraffic {
         for (auto &laneLink: laneLinks) laneLink.reset();
     }
 
+    unsigned long RoadLink::getVehicleCnt() const{
+        unsigned long cnt = 0;
+        for(auto &laneLink : laneLinks)
+            cnt += laneLink.getVehicleCnt();
+        return cnt;
+    }
+
     //yzh:清空LaneLink中的vehicles
     void LaneLink::reset() {
         vehicles.clear();
@@ -710,9 +693,7 @@ namespace SEUTraffic {
         std::unordered_map<int, int> traffic;
         for (auto &roadLink: roadLinks) {
             traffic[roadLink.getIndex()] = 0;
-            for (auto &laneLink: laneLinks) {
-                traffic[roadLink.getIndex()] += (int) laneLink->getVehicleCnt();
-            }
+            traffic[roadLink.getIndex()] += (int)roadLink.getVehicleCnt();
         }
         return traffic;
     }

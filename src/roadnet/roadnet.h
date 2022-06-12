@@ -37,7 +37,7 @@ namespace SEUTraffic {
 
         friend class TrafficLight;
 
-    private:
+    protected:
         // need reset: roadlinks, trafficlight
         std::string id;
         bool isVirtual;
@@ -50,12 +50,11 @@ namespace SEUTraffic {
 
         std::vector<Road *> inRoads;
         std::vector<Road *> outRoads;
-        struct {
-            Intersection *northNeighbour = nullptr;
-            Intersection *southNeighbour = nullptr;
-            Intersection *westNeighbour = nullptr;
-            Intersection *eastNeighbour = nullptr;
-        } neighbours;
+
+        enum Direction {
+            East = 0, North = 1, West = 2, South = 3
+        };
+        std::vector<Intersection *> neighbours;
 
     public:
         std::string getId() const { return this->id; }
@@ -132,7 +131,7 @@ namespace SEUTraffic {
     };
 
     enum RoadLinkType {
-        go_straight = 3, turn_left = 2, turn_right = 1
+        go_straight = 0, turn_left = 1, turn_right = 2
     };
 
     class RoadLink {
@@ -171,6 +170,9 @@ namespace SEUTraffic {
 
         int getIndex() const { return index; }
 
+        RoadLinkType getRoadLinkType() { return type; }
+
+        unsigned long getVehicleCnt() const;
     };
 
     class Drivable {
