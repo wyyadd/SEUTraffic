@@ -18,8 +18,7 @@ namespace ALGO {
             for (int i = 0; i < 4; ++i) {
                 auto neighbour_phase = static_cast<MovementPhases>(i);
                 for (auto &neighbour_cost_pair: costGraph[phase][neighbour_phase].cost) {
-                    // TODO: add lock
-                    neighbour_cost_pair.first->getMailBox()[neighbour_phase].Q += neighbour_cost_pair.second + cost;
+                    neighbour_cost_pair.first->receiveMessage(neighbour_phase, neighbour_cost_pair.second + cost);
                 }
             }
         }
@@ -79,9 +78,10 @@ namespace ALGO {
         for (int phase = 0; phase < 4; ++phase) {
             double cost = 0;
             auto neighbour_phase = static_cast<MovementPhases>(movementPhase);
-            // TODO: intersection set phase
             // TODO: engine predict
-            // neighbour set neighbour_phase
+            engine->predictPeriod(30);
+            trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
+            neighbour->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[neighbour_phase]);
             // engine predict
             for (auto &roadLink: roadLinks) {
                 if (roadLink.getStartRoad()->getStartIntersection()->getId() == neighbour->getId()
@@ -102,7 +102,7 @@ namespace ALGO {
 
     void DSA_Agent::generateLocalCost(Intersection *neighbour, MovementPhases movementPhase) {
         double cost = 0;
-        // this set phase
+        trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
         // engine predict
         for (auto &roadLink: roadLinks) {
             if (roadLink.getStartRoad()->getStartIntersection() == neighbour
@@ -129,5 +129,9 @@ namespace ALGO {
         }
     }
 
+    void DSA_Agent::receiveMessage(DSA_Agent::MovementPhases movementPhase, double val) {
+        std::unique_lock<std::mutex> lock(*agentMutex);
+        receivedMessage[movementPhase].Q += val;
+    }
 
 } // ALGO

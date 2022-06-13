@@ -123,13 +123,13 @@ namespace ALGO {
         }
 
     public:
-        explicit Controller(Engine& e) {
-            this->engine = &e;
+        explicit Controller(Engine* e) {
+            this->engine = e;
             // init agents
             int id = 0;
-            for (auto &intersection: e.getRoadnet().getIntersections()) {
+            for (auto &intersection: e->getRoadnet().getIntersections()) {
                 if (!intersection.isVirtualIntersection()) {
-                    agents.emplace_back(id++, &intersection);
+                    agents.emplace_back(id++, &intersection, engine);
                 }
             }
             // generate DAG graph

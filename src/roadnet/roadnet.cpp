@@ -91,6 +91,7 @@ namespace SEUTraffic {
 
                 roads[i].startIntersection = interMap[getJsonMember<const char *>("startIntersection", curRoadValue)];
                 roads[i].endIntersection = interMap[getJsonMember<const char *>("endIntersection", curRoadValue)];
+
                 roads[i].startIntersection->neighbours[roads[i].getId().back() - '0'] = roads[i].endIntersection;
                 roads[i].endIntersection->neighbours[(roads[i].getId().back() - '0' + 2) % 4] = roads[i].startIntersection;
                 //check

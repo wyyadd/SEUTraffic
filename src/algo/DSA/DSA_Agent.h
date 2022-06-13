@@ -7,12 +7,12 @@
 
 #include "engine/engine.h"
 #include <unordered_map>
-#include <deque>
 #include <vector>
 #include <cmath>
 
 namespace ALGO {
     using SEUTraffic::Intersection;
+    using SEUTraffic::Engine;
     using std::string;
     using std::pair;
 
@@ -23,19 +23,23 @@ namespace ALGO {
         };
 
         struct Cost {
-            std::vector<std::pair<DSA_Agent*, double>> cost;
+            std::vector<std::pair<DSA_Agent *, double>> cost;
         };
 
         enum MovementPhases {
             WE_Straight = 0, WE_Left = 1, SN_Straight = 2, SN_Left = 3
         };
         int agentId;
+        Engine *engine;
+        std::mutex *agentMutex;
         std::vector<Message> receivedMessage;
         std::vector<DSA_Agent *> inAgents;
         std::vector<DSA_Agent *> outAgents;
         // 4 rows represent 4 movementPhases, 5 column: neighbour's four movementPhase, local cost
         // 4行代表我们的四个movementPhases, 5列:前四列表示neighbour采取的4个movementPhase下产生的cost, 第5列表示localCost
         std::vector<std::vector<Cost>> costGraph;
+        int movementPhases_to_trafficLightPhase[4]{1, 3, 2, 4};
+
     private:
         void generateCostGraph(MovementPhases movementPhase);
 
@@ -47,18 +51,24 @@ namespace ALGO {
         void generateLocalCost(Intersection *neighbour, MovementPhases movementPhase);
 
     public:
-        DSA_Agent(int id, Intersection *intersection) : Intersection(*intersection), agentId(id) {
+        DSA_Agent(int id, Intersection *intersection, Engine *engine) : Intersection(*intersection), agentId(id),
+                                                                        engine(engine) {
             inAgents.resize(4, nullptr);
             outAgents.resize(4, nullptr);
             receivedMessage.resize(4, Message());
             costGraph.resize(4, std::vector<Cost>(5, Cost()));
+            agentMutex = new std::mutex();
+        }
+
+        ~DSA_Agent() {
+            delete agentMutex;
         }
 
         int getAgentId() const { return agentId; }
 
-        std::vector<Message> &getMailBox() { return receivedMessage; }
-
         void sendMessage();
+
+        void receiveMessage(MovementPhases movementPhase, double val);
 
         void updateInAgents(DSA_Agent *agent);
 

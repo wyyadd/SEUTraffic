@@ -65,6 +65,21 @@ namespace SEUTraffic {
             rapidjson::Value convertToStatistic(std::vector<T> &arr, rapidjson::Document::AllocatorType &allocator);
         } statistics;
 
+        struct SnapshotBuffer {
+            std::map<size_t, std::pair<Vehicle *, int>> vehiclePool;
+            std::map<std::string, Vehicle *> vehicleMap;
+            std::vector<std::set<Vehicle *>> threadVehiclePool;
+            std::vector<Flow> flows;
+            size_t steps = 0;
+            int finishedVehicleCnt = 0;
+            int vehicleActiveCount = 0;
+            int totalVehicleCnt = 0;
+            int currentTime = 0;
+            double cumulativeTravelTime = 0;
+            double cumulativeWaitingTime = 0;
+            std::vector<Vehicle> tmp_vehicle;
+        } snapshotBuffer;
+
     private:
         void vehicleControl(Vehicle &vehicle);
 
@@ -173,8 +188,9 @@ namespace SEUTraffic {
 
         void handleWaiting();
 
-        void predictPeriod(int period);
+        Engine* predictPeriod(int period);
 
+        void stopPredict();
     };
 }
 

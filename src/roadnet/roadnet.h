@@ -54,7 +54,7 @@ namespace SEUTraffic {
         enum Direction {
             East = 0, North = 1, West = 2, South = 3
         };
-        std::vector<Intersection *> neighbours;
+        Intersection* neighbours[4];
 
     public:
         std::string getId() const { return this->id; }
@@ -190,11 +190,16 @@ namespace SEUTraffic {
         std::list<Vehicle *> vehicles;
         // endVehicles store vehicle reaching end, delete when updateLocation function
         std::vector<Vehicle *> endVehicles;
-        std::list<Vehicle *> snapshotVehicles;
-        std::vector<Vehicle *> snapshotEndVehicles;
         DrivableType drivableType;
         // wyy modify: add points
         std::vector<Point> points;
+        long traffic = 0;
+
+        struct SnapshotBuffer{
+            std::list<Vehicle *> vehicles;
+            std::vector<Vehicle *> endVehicles;
+            long traffic = 0;
+        } snapshotBuffer;
 
     public:
         virtual ~Drivable() = default;
@@ -225,9 +230,9 @@ namespace SEUTraffic {
             return nullptr;
         }
 
-        void pushBackVehicle(Vehicle *vehicle) { vehicles.push_back(vehicle); }
+        void pushBackVehicle(Vehicle *vehicle) { vehicles.push_back(vehicle); ++traffic;}
 
-        void pushFrontVehicle(Vehicle *vehicle) { vehicles.push_front(vehicle); }
+        void pushFrontVehicle(Vehicle *vehicle) { vehicles.push_front(vehicle); --traffic;}
 
         void popBackVehicle() { vehicles.pop_back(); }
 
@@ -247,15 +252,16 @@ namespace SEUTraffic {
         Point getDirectionByDistance(double dis) const;
 
         void snapshot() {
-            snapshotVehicles = vehicles;
-            snapshotEndVehicles = endVehicles;
+            snapshotBuffer.endVehicles = endVehicles;
+            snapshotBuffer.vehicles = vehicles;
+            snapshotBuffer.traffic = traffic;
         }
 
         void restore() {
-            vehicles = snapshotVehicles;
-            endVehicles = snapshotEndVehicles;
-            snapshotVehicles.clear();
-            snapshotEndVehicles.clear();
+            vehicles = snapshotBuffer.vehicles;
+            endVehicles = snapshotBuffer.endVehicles;
+            traffic = snapshotBuffer.traffic;
+            snapshotBuffer = SnapshotBuffer();
         }
     };
 
@@ -269,9 +275,10 @@ namespace SEUTraffic {
         int laneIndex;
         std::vector<LaneLink *> laneLinks;
         std::deque<Vehicle *> waitingBuffer;
-        std::deque<Vehicle *> snapshotWaitingBuffer;
         Road *belongRoad = nullptr;//yzh:lane所属road
-
+        struct LaneSnapshotBuffer{
+            std::deque<Vehicle *> waitingBuffer;
+        } laneSnapshotBuffer;
     public:
         Lane();
 
@@ -314,11 +321,11 @@ namespace SEUTraffic {
             waitingBuffer.emplace_back(vehicle);
         }
 
-        void waitingBufferSnapshot() { snapshotWaitingBuffer = waitingBuffer; }
+        void waitingBufferSnapshot() { laneSnapshotBuffer.waitingBuffer = waitingBuffer; }
 
         void waitingBufferRestore() {
-            waitingBuffer = snapshotWaitingBuffer;
-            snapshotWaitingBuffer.clear();
+            waitingBuffer = laneSnapshotBuffer.waitingBuffer;
+            laneSnapshotBuffer = LaneSnapshotBuffer();
         }
 
         size_t getWaitingBufferCnt() const { return waitingBuffer.size(); }
