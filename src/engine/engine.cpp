@@ -793,9 +793,9 @@ namespace SEUTraffic {
         }
     }
 
-    Engine* Engine::predictPeriod(int period) {
+    void Engine::predictPeriod(int period) {
         if (period < 1)
-            return nullptr;
+            return;
         predictMode = true;
         snapshotBuffer.vehiclePool = vehiclePool;
         snapshotBuffer.vehicleMap = vehicleMap;
@@ -818,7 +818,6 @@ namespace SEUTraffic {
         for (int i = 0; i < period; ++i)
             nextStep();
         std::cout << "predict done\n";
-        return this;
     }
 
     void Engine::stopPredict() {

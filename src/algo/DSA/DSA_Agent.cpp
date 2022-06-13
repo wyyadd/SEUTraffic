@@ -11,7 +11,8 @@ namespace ALGO {
             auto phase = static_cast<MovementPhases>(movementPhase);
             double cost = 0;
             // add local cost
-            cost += costGraph[phase][4].cost.empty() ? 0 : costGraph[phase][4].cost[0].second;
+            for(auto& localCost : costGraph[phase][4].cost)
+                cost += localCost.second;
             // add message from neighbour
             cost += receivedMessage[phase].Q;
             // send cost to neighbour
@@ -77,12 +78,11 @@ namespace ALGO {
         // neighbour set four movement
         for (int phase = 0; phase < 4; ++phase) {
             double cost = 0;
-            auto neighbour_phase = static_cast<MovementPhases>(movementPhase);
-            // TODO: engine predict
-            engine->predictPeriod(30);
+            auto neighbour_phase = static_cast<MovementPhases>(phase);
             trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
             neighbour->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[neighbour_phase]);
             // engine predict
+            engine->predictPeriod(30);
             for (auto &roadLink: roadLinks) {
                 if (roadLink.getStartRoad()->getStartIntersection()->getId() == neighbour->getId()
                     && (int) roadLink.getRoadLinkType() % 2 == (int) movementPhase) {
@@ -97,30 +97,22 @@ namespace ALGO {
             }
             costGraph[movementPhase][neighbour_phase].cost.emplace_back(neighbour, cost);
             // engine predict done
+            engine->stopPredict();
         }
     }
 
     void DSA_Agent::generateLocalCost(Intersection *neighbour, MovementPhases movementPhase) {
         double cost = 0;
         trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
-        // engine predict
+        engine->predictPeriod(30);
         for (auto &roadLink: roadLinks) {
             if (roadLink.getStartRoad()->getStartIntersection() == neighbour
                 && (int) roadLink.getRoadLinkType() % 2 == (int) movementPhase) {
-                // TODO: 修改计算方法
                 cost += std::pow(roadLink.getVehicleCnt(), 2);
             }
         }
-        // engine predict done
+        engine->stopPredict();
         costGraph[movementPhase][4].cost.emplace_back(nullptr, cost);
-    }
-
-    void DSA_Agent::run() {
-        // wait receive all message
-        generateCostGraph();
-        sendMessage();
-        // reverse generateCostGraph and sendMessage
-        // make decision
     }
 
     void DSA_Agent::generateCostGraph() {
@@ -132,6 +124,32 @@ namespace ALGO {
     void DSA_Agent::receiveMessage(DSA_Agent::MovementPhases movementPhase, double val) {
         std::unique_lock<std::mutex> lock(*agentMutex);
         receivedMessage[movementPhase].Q += val;
+    }
+
+    void DSA_Agent::makeDecision() {
+        int bestPhase = -1;
+        double minCost = INT32_MAX;
+        for (int movementPhase = 0; movementPhase < 4; ++movementPhase) {
+            auto phase = static_cast<MovementPhases>(movementPhase);
+            double cost = 0;
+            for(auto& localCost : costGraph[phase][4].cost)
+                cost += localCost.second;
+            cost += receivedMessage[phase].Q;
+            if(cost < minCost){
+                minCost = cost;
+                bestPhase = phase;
+            }
+        }
+        if(bestPhase != -1)
+            trafficLight.setPhase(movementPhases_to_trafficLightPhase[bestPhase]);
+    }
+
+    void DSA_Agent::run() {
+        // wait receive all message
+        generateCostGraph();
+        sendMessage();
+        // reverse generateCostGraph and sendMessage
+        makeDecision();
     }
 
 } // ALGO

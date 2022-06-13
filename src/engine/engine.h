@@ -188,7 +188,7 @@ namespace SEUTraffic {
 
         void handleWaiting();
 
-        Engine* predictPeriod(int period);
+        void predictPeriod(int period);
 
         void stopPredict();
     };

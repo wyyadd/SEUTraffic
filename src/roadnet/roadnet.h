@@ -193,12 +193,10 @@ namespace SEUTraffic {
         DrivableType drivableType;
         // wyy modify: add points
         std::vector<Point> points;
-        long traffic = 0;
 
         struct SnapshotBuffer{
             std::list<Vehicle *> vehicles;
             std::vector<Vehicle *> endVehicles;
-            long traffic = 0;
         } snapshotBuffer;
 
     public:
@@ -230,9 +228,9 @@ namespace SEUTraffic {
             return nullptr;
         }
 
-        void pushBackVehicle(Vehicle *vehicle) { vehicles.push_back(vehicle); ++traffic;}
+        void pushBackVehicle(Vehicle *vehicle) { vehicles.push_back(vehicle); }
 
-        void pushFrontVehicle(Vehicle *vehicle) { vehicles.push_front(vehicle); --traffic;}
+        void pushFrontVehicle(Vehicle *vehicle) { vehicles.push_front(vehicle); }
 
         void popBackVehicle() { vehicles.pop_back(); }
 
@@ -254,13 +252,11 @@ namespace SEUTraffic {
         void snapshot() {
             snapshotBuffer.endVehicles = endVehicles;
             snapshotBuffer.vehicles = vehicles;
-            snapshotBuffer.traffic = traffic;
         }
 
         void restore() {
             vehicles = snapshotBuffer.vehicles;
             endVehicles = snapshotBuffer.endVehicles;
-            traffic = snapshotBuffer.traffic;
             snapshotBuffer = SnapshotBuffer();
         }
     };

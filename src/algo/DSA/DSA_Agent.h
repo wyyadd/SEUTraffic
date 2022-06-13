@@ -76,6 +76,8 @@ namespace ALGO {
 
         void generateCostGraph();
 
+        void makeDecision();
+
         void run();
     };
 } // ALGO
