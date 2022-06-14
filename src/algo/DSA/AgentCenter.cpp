@@ -2,9 +2,11 @@
 // Created by wyyadd on 6/9/22.
 //
 #include "engine/engine.h"
+#include "utility/barrier.h"
 #include "DSA_Agent.h"
 #include <unordered_map>
 #include <algorithm>
+#include <thread>
 
 namespace ALGO {
     using std::string;
@@ -12,15 +14,22 @@ namespace ALGO {
     using std::cout;
     using SEUTraffic::Engine;
     using SEUTraffic::Intersection;
+    using SEUTraffic::Barrier;
 
-    class Controller {
+    class AgentCenter {
     private:
         vector<DSA_Agent> agents;
         vector<vector<int>> graph;
         Engine *engine;
         // {intersection id : agent id}
         std::unordered_map<string, int> interMap;
+        std::vector<std::thread> agentPool; // 线程池
+        Barrier *startBarrier;
+        Barrier *endBarrier;
 
+
+
+    private:
         void generateGraph() {
             for (auto &a: agents) {
                 interMap[a.getId()] = a.getAgentId();
@@ -122,8 +131,14 @@ namespace ALGO {
             }
         }
 
+        void agentRun(DSA_Agent &agent) {
+            startBarrier->wait();
+            agent.run();
+            endBarrier->wait();
+        }
+
     public:
-        explicit Controller(Engine* e) {
+        explicit AgentCenter(Engine *e) {
             this->engine = e;
             // init agents
             int id = 0;
@@ -132,8 +147,24 @@ namespace ALGO {
                     agents.emplace_back(id++, &intersection, engine);
                 }
             }
+            startBarrier = new Barrier(agents.size() + 1);
+            endBarrier = new Barrier(agents.size() + 1);
             // generate DAG graph
             generateGraph();
+            // start thread
+            for (auto &agent: agents)
+                agentPool.emplace_back(&AgentCenter::agentRun, this, std::ref(agent));
+        }
+
+        void run(){
+            startBarrier->wait();
+            endBarrier->wait();
+        }
+
+        ~AgentCenter() {
+            for (auto &thread: agentPool) thread.join();
+            delete startBarrier;
+            delete endBarrier;
         }
     };
 } // ALGO

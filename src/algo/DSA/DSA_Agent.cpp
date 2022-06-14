@@ -11,7 +11,7 @@ namespace ALGO {
             auto phase = static_cast<MovementPhases>(movementPhase);
             double cost = 0;
             // add local cost
-            for(auto& localCost : costGraph[phase][4].cost)
+            for (auto &localCost: costGraph[phase][4].cost)
                 cost += localCost.second;
             // add message from neighbour
             cost += receivedMessage[phase].Q;
@@ -19,7 +19,7 @@ namespace ALGO {
             for (int i = 0; i < 4; ++i) {
                 auto neighbour_phase = static_cast<MovementPhases>(i);
                 for (auto &neighbour_cost_pair: costGraph[phase][neighbour_phase].cost) {
-                    neighbour_cost_pair.first->receiveMessage(neighbour_phase, neighbour_cost_pair.second + cost);
+                    neighbour_cost_pair.first->receiveMessage(neighbour_phase, neighbour_cost_pair.second + cost, this);
                 }
             }
         }
@@ -121,9 +121,14 @@ namespace ALGO {
         }
     }
 
-    void DSA_Agent::receiveMessage(DSA_Agent::MovementPhases movementPhase, double val) {
-        std::unique_lock<std::mutex> lock(*agentMutex);
-        receivedMessage[movementPhase].Q += val;
+    void DSA_Agent::receiveMessage(DSA_Agent::MovementPhases movementPhase, double val, DSA_Agent *sender) {
+        {
+            std::unique_lock<std::mutex> lock(*agentMutex);
+            receivedMessage[movementPhase].Q += val;
+            receivedMessage[movementPhase].sender.push_back(sender);
+            ++currentReceivedNum;
+        }
+        cv->notify_one();
     }
 
     void DSA_Agent::makeDecision() {
@@ -132,24 +137,42 @@ namespace ALGO {
         for (int movementPhase = 0; movementPhase < 4; ++movementPhase) {
             auto phase = static_cast<MovementPhases>(movementPhase);
             double cost = 0;
-            for(auto& localCost : costGraph[phase][4].cost)
+            for (auto &localCost: costGraph[phase][4].cost)
                 cost += localCost.second;
             cost += receivedMessage[phase].Q;
-            if(cost < minCost){
+            if (cost < minCost) {
                 minCost = cost;
                 bestPhase = phase;
             }
         }
-        if(bestPhase != -1)
+        if (bestPhase != -1) {
             trafficLight.setPhase(movementPhases_to_trafficLightPhase[bestPhase]);
+            cout << id << " make decision: " << bestPhase << '\n';
+        } else {
+            std::cerr << "error happen, agent Id: " << id << '\n';
+        }
     }
 
     void DSA_Agent::run() {
         // wait receive all message
+        std::unique_lock<std::mutex> lk(*agentMutex);
+        cv->wait(lk, [&] { return currentReceivedNum >= 4 * inAgents.size(); });
         generateCostGraph();
         sendMessage();
-        // reverse generateCostGraph and sendMessage
+        // reverse order
+        std::swap(inAgents,outAgents);
+        currentReceivedNum = 0;
+        cv->wait(lk, [&] { return currentReceivedNum >= 4 * inAgents.size(); });
+        costGraph.resize(4, std::vector<Cost>(5, Cost()));
+        generateCostGraph();
+        sendMessage();
+
         makeDecision();
+        // reset
+        currentReceivedNum = 0;
+        costGraph.resize(4, std::vector<Cost>(5, Cost()));
+        receivedMessage.resize(4, Message());
+        std::swap(inAgents,outAgents);
     }
 
 } // ALGO

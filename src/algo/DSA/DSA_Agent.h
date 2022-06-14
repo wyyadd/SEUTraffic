@@ -15,11 +15,13 @@ namespace ALGO {
     using SEUTraffic::Engine;
     using std::string;
     using std::pair;
+    using std::cout;
 
     class DSA_Agent : public Intersection {
     private:
         struct Message {
             double Q = 0;
+            std::vector<DSA_Agent*> sender;
         };
 
         struct Cost {
@@ -31,7 +33,11 @@ namespace ALGO {
         };
         int agentId;
         Engine *engine;
+
         std::mutex *agentMutex;
+        std::condition_variable *cv;
+        int currentReceivedNum = 0;
+
         std::vector<Message> receivedMessage;
         std::vector<DSA_Agent *> inAgents;
         std::vector<DSA_Agent *> outAgents;
@@ -58,17 +64,19 @@ namespace ALGO {
             receivedMessage.resize(4, Message());
             costGraph.resize(4, std::vector<Cost>(5, Cost()));
             agentMutex = new std::mutex();
+            cv = new std::condition_variable();
         }
 
         ~DSA_Agent() {
             delete agentMutex;
+            delete cv;
         }
 
         int getAgentId() const { return agentId; }
 
         void sendMessage();
 
-        void receiveMessage(MovementPhases movementPhase, double val);
+        void receiveMessage(MovementPhases movementPhase, double val, DSA_Agent* sender);
 
         void updateInAgents(DSA_Agent *agent);
 

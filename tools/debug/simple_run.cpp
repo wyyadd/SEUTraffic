@@ -1,5 +1,5 @@
 #include "engine/engine.h"
-#include "algo/DSA/Controller.cpp"
+#include "algo/DSA/AgentCenter.cpp"
 #include <string>
 #include <iostream>
 #include <ctime>
@@ -13,9 +13,11 @@ int main() {
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
-    ALGO::Controller dcop(&engine);
+    ALGO::AgentCenter dcop(&engine);
     for (int i = 0; i < (int) totalStep; i++) {
         engine.nextStep(true);
+        if(i % 30 == 0)
+            dcop.run();
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
         }

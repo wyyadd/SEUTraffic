@@ -23,7 +23,7 @@ set(PROJECT_SOURCE_FILES
         vehicle/vehicle.cpp
         vehicle/vehicleInfo.cpp
         algo/maxPressure.cpp
-        algo/DSA/Controller.cpp
+        algo/DSA/AgentCenter.cpp
         algo/DSA/DSA_Agent.cpp)
 
 set(PROJECT_LIB_NAME ${PROJECT_NAME}_lib CACHE INTERNAL "")
