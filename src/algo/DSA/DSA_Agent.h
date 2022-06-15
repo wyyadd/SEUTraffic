@@ -16,8 +16,9 @@ namespace ALGO {
     using std::string;
     using std::pair;
     using std::cout;
+    using SEUTraffic::TrafficLight;
 
-    class DSA_Agent : public Intersection {
+    class DSA_Agent {
     private:
         struct Message {
             double Q = 0;
@@ -31,7 +32,13 @@ namespace ALGO {
         enum MovementPhases {
             WE_Straight = 0, WE_Left = 1, SN_Straight = 2, SN_Left = 3
         };
+
+        enum Direction {
+            East = 0, North = 1, West = 2, South = 3
+        };
+
         int agentId;
+        Intersection *intersection;
         Engine *engine;
 
         std::mutex *enginePredictMutex;
@@ -61,23 +68,25 @@ namespace ALGO {
 
     public:
         DSA_Agent(int id, Intersection *intersection, Engine *engine, std::mutex *enginePredictMutex)
-                : Intersection(*intersection), agentId(id), engine(engine), enginePredictMutex(enginePredictMutex) {
+                : agentId(id), intersection(intersection), engine(engine), enginePredictMutex(enginePredictMutex) {
             inAgents.resize(4, nullptr);
             outAgents.resize(4, nullptr);
             receivedMessage.resize(4, Message());
             costGraph.resize(4, std::vector<Cost>(5, Cost()));
-            std::cout << getId() << " : new mutex" << '\n';
             agentMutex = new std::mutex();
             cv = new std::condition_variable();
         }
 
         ~DSA_Agent() {
-            std::cout << getId() << " : delete mutex" << '\n';
             delete agentMutex;
             delete cv;
         }
 
+        string getId() const { return intersection->getId(); }
+
         int getAgentId() const { return agentId; }
+
+        Intersection *getIntersection() { return intersection; }
 
         void sendMessage();
 

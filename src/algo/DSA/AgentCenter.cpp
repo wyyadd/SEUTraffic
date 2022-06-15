@@ -149,7 +149,7 @@ namespace ALGO {
             this->engine = e;
             // init agents
             int id = 0;
-            // 这步好像很重要，vector频繁的调整大小的话，会对mutex造成破坏，这是为什么捏捏捏
+            // 这步好像很重要，vector频繁的调整大小的话，会对mutex指针造成破坏，这是为什么捏捏捏
             // bug
             agents.reserve(e->getRoadnet().getIntersections().size());
 

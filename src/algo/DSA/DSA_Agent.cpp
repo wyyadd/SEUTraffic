@@ -28,49 +28,54 @@ namespace ALGO {
     }
 
     void DSA_Agent::updateInAgents(DSA_Agent *agent) {
-        if (neighbours[North] != nullptr && neighbours[North]->getId() == agent->getId())
+        if (intersection->neighbours[North] != nullptr && intersection->neighbours[North]->getId() == agent->getId())
             inAgents[North] = agent;
-        else if (neighbours[South] != nullptr && neighbours[South]->getId() == agent->getId())
+        else if (intersection->neighbours[South] != nullptr && intersection->neighbours[South]->getId() == agent->getId())
             inAgents[South] = agent;
-        else if (neighbours[West] != nullptr && neighbours[West]->getId() == agent->getId())
+        else if (intersection->neighbours[West] != nullptr && intersection->neighbours[West]->getId() == agent->getId())
             inAgents[West] = agent;
-        else if (neighbours[East] != nullptr && neighbours[East]->getId() == agent->getId())
+        else if (intersection->neighbours[East] != nullptr && intersection->neighbours[East]->getId() == agent->getId())
             inAgents[East] = agent;
     }
 
     void DSA_Agent::updateOutAgents(DSA_Agent *agent) {
-        if (neighbours[North] != nullptr && neighbours[North]->getId() == agent->getId())
+        if (intersection->neighbours[North] != nullptr && intersection->neighbours[North]->getId() == agent->getId())
             outAgents[North] = agent;
-        else if (neighbours[South] != nullptr && neighbours[South]->getId() == agent->getId())
+        else if (intersection->neighbours[South] != nullptr && intersection->neighbours[South]->getId() == agent->getId())
             outAgents[South] = agent;
-        else if (neighbours[West] != nullptr && neighbours[West]->getId() == agent->getId())
+        else if (intersection->neighbours[West] != nullptr && intersection->neighbours[West]->getId() == agent->getId())
             outAgents[West] = agent;
-        else if (neighbours[East] != nullptr && neighbours[East]->getId() == agent->getId())
+        else if (intersection->neighbours[East] != nullptr && intersection->neighbours[East]->getId() == agent->getId())
             outAgents[East] = agent;
     }
 
     void DSA_Agent::generateCostGraph(MovementPhases movementPhase) {
         switch (movementPhase) {
-            case WE_Straight:
-            case SN_Left: {
+            case WE_Straight: {
                 generateCost(West, movementPhase);
                 generateCost(East, movementPhase);
                 break;
             }
-            case SN_Straight:
-            case WE_Left: {
+            case SN_Straight: {
                 generateCost(North, movementPhase);
                 generateCost(South, movementPhase);
                 break;
+            }
+            case SN_Left:
+            case WE_Left: {
+                generateCost(West, movementPhase);
+                generateCost(East, movementPhase);
+                generateCost(North, movementPhase);
+                generateCost(South, movementPhase);
             }
         }
     }
 
     void DSA_Agent::generateCost(Direction direction, MovementPhases movementPhase) {
-        if (outAgents[direction] == nullptr && !neighbours[direction]->isVirtualIntersection())
+        if (outAgents[direction] == nullptr && !intersection->neighbours[direction]->isVirtualIntersection())
             return;
         if (outAgents[direction] == nullptr)
-            return generateLocalCost(neighbours[direction], movementPhase);
+            return generateLocalCost(intersection->neighbours[direction], movementPhase);
         else
             return generateCostWithNeighbour(outAgents[direction], movementPhase);
     }
@@ -81,27 +86,33 @@ namespace ALGO {
         for (int phase = 0; phase < 4; ++phase) {
             double cost = 0;
             auto neighbour_phase = static_cast<MovementPhases>(phase);
-            trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
-            neighbour->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[neighbour_phase]);
             // lock
             std::unique_lock<std::mutex> lk(*enginePredictMutex);
+            // snapshot and set trafficLight
+            intersection->getTrafficLight().snapshot();
+            intersection->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
+            neighbour->getIntersection()->getTrafficLight().snapshot();
+            neighbour->getIntersection()->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[neighbour_phase]);
             // engine predict
             engine->predictPeriod(30);
-            for (auto &roadLink: roadLinks) {
+            for (auto &roadLink: intersection->getRoadLinks()) {
                 if (roadLink.getStartRoad()->getStartIntersection()->getId() == neighbour->getId()
-                    && (int) roadLink.getRoadLinkType() % 2 == (int) movementPhase) {
+                    && (int) roadLink.getRoadLinkType() == (int) movementPhase % 2) {
                     cost += std::pow(roadLink.getVehicleCnt(), 2);
                 }
             }
-            for (auto &roadLink: neighbour->getRoadLinks()) {
+            for (auto &roadLink: neighbour->getIntersection()->getRoadLinks()) {
                 if (roadLink.getStartRoad()->getStartIntersection()->getId() == getId() &&
-                    (int) roadLink.getRoadLinkType() % 2 == (int) movementPhase) {
+                    (int) roadLink.getRoadLinkType() == (int) neighbour_phase % 2) {
                     cost += std::pow(roadLink.getVehicleCnt(), 2);
                 }
             }
             costGraph[movementPhase][neighbour_phase].cost.emplace_back(neighbour, cost);
             // engine predict done
             engine->stopPredict();
+            // restore trafficLight
+            intersection->getTrafficLight().restore();
+            neighbour->getIntersection()->getTrafficLight().restore();
             // unlock
             lk.unlock();
         }
@@ -109,17 +120,19 @@ namespace ALGO {
 
     void DSA_Agent::generateLocalCost(Intersection *neighbour, MovementPhases movementPhase) {
         double cost = 0;
-        trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
         // lock
         std::unique_lock<std::mutex> lk(*enginePredictMutex);
+        intersection->getTrafficLight().snapshot();
+        intersection->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
         engine->predictPeriod(30);
-        for (auto &roadLink: roadLinks) {
+        for (auto &roadLink: intersection->getRoadLinks()) {
             if (roadLink.getStartRoad()->getStartIntersection() == neighbour
-                && (int) roadLink.getRoadLinkType() % 2 == (int) movementPhase) {
+                && (int) roadLink.getRoadLinkType() == (int) movementPhase % 2) {
                 cost += std::pow(roadLink.getVehicleCnt(), 2);
             }
         }
         engine->stopPredict();
+        intersection->getTrafficLight().restore();
         // unlock
         lk.unlock();
         costGraph[movementPhase][4].cost.emplace_back(nullptr, cost);
@@ -165,11 +178,10 @@ namespace ALGO {
             }
         }
         if (bestPhase != -1) {
-            trafficLight.setPhase(movementPhases_to_trafficLightPhase[bestPhase]);
-            if(bestPhase != 0)
-                cout << id << " make decision: " << bestPhase << '\n';
+            intersection->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[bestPhase]);
+//            cout << getId() << " make decision: " << bestPhase << '\n';
         } else {
-            std::cerr << "error happen, agent Id: " << id << '\n';
+            std::cerr << "error happen, agent Id: " << getId() << '\n';
         }
     }
 
@@ -185,26 +197,17 @@ namespace ALGO {
     void DSA_Agent::run() {
         // wait receive all message
         std::unique_lock<std::mutex> lk(*agentMutex);
-//        std::cout << getId() << " cv wait" << '\n';
-        cv->wait(lk, [&] { return currentReceivedNum >= 8 * getNotNullAgentSize(inAgents); });
-//        std::cout << getId() << " cv wait done" << '\n';
+        cv->wait(lk, [&] { return currentReceivedNum >= 12 * getNotNullAgentSize(inAgents); });
         generateCostGraph();
-//        std::cout << getId() << " do sth 1" << '\n';
         sendMessage();
-//        std::cout << getId() << " do sth 1 done" << '\n';
         // reverse order
-//        std::cout << getId() << " reverse order" << '\n';
         currentReceivedNum = 0;
         std::swap(inAgents, outAgents);
-//        std::cout << getId() << " cv wait" << '\n';
-        cv->wait(lk, [&] { return currentReceivedNum >= 8 * getNotNullAgentSize(inAgents); });
-//        std::cout << getId() << " cv wait done" << '\n';
+        cv->wait(lk, [&] { return currentReceivedNum >= 12 * getNotNullAgentSize(inAgents); });
         costGraph.clear();
         costGraph.resize(4, std::vector<Cost>(5, Cost()));
         generateCostGraph();
-//        std::cout << getId() << " do sth 2" << '\n';
         sendMessage();
-//        std::cout << getId() << " do sth 2 done" << '\n';
 
         makeDecision();
     }

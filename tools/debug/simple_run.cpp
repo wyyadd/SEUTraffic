@@ -15,9 +15,9 @@ int main() {
     time(&startTime);
     ALGO::AgentCenter dcop(&engine);
     for (int i = 0; i < (int) totalStep; i++) {
-        engine.nextStep(true);
         if(i % 30 == 0)
             dcop.run();
+        engine.nextStep(true);
         if (i % (totalStep / 10) == 0) {
             std::cout << "The current degree of completion: " << 100 * i / totalStep << "%" << std::endl;
         }

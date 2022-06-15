@@ -37,7 +37,7 @@ namespace SEUTraffic {
 
         friend class TrafficLight;
 
-    protected:
+    private:
         // need reset: roadlinks, trafficlight
         std::string id;
         bool isVirtual;
@@ -54,6 +54,7 @@ namespace SEUTraffic {
         enum Direction {
             East = 0, North = 1, West = 2, South = 3
         };
+    public:
         Intersection* neighbours[4];
 
     public:
