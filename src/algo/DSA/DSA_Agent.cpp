@@ -4,6 +4,8 @@
 
 #include "DSA_Agent.h"
 
+// 当前问题： engine只能由主线程预测
+// receive message 会发生死锁
 namespace ALGO {
     void DSA_Agent::sendMessage() {
         for (int movementPhase = 0; movementPhase < 4; ++movementPhase) {
@@ -50,13 +52,13 @@ namespace ALGO {
     void DSA_Agent::generateCostGraph(MovementPhases movementPhase) {
         switch (movementPhase) {
             case WE_Straight:
-            case WE_Left: {
+            case SN_Left: {
                 generateCost(West, movementPhase);
                 generateCost(East, movementPhase);
                 break;
             }
             case SN_Straight:
-            case SN_Left: {
+            case WE_Left: {
                 generateCost(North, movementPhase);
                 generateCost(South, movementPhase);
                 break;
@@ -81,6 +83,8 @@ namespace ALGO {
             auto neighbour_phase = static_cast<MovementPhases>(phase);
             trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
             neighbour->getTrafficLight().setPhase(movementPhases_to_trafficLightPhase[neighbour_phase]);
+            // lock
+            std::unique_lock<std::mutex> lk(*enginePredictMutex);
             // engine predict
             engine->predictPeriod(30);
             for (auto &roadLink: roadLinks) {
@@ -98,12 +102,16 @@ namespace ALGO {
             costGraph[movementPhase][neighbour_phase].cost.emplace_back(neighbour, cost);
             // engine predict done
             engine->stopPredict();
+            // unlock
+            lk.unlock();
         }
     }
 
     void DSA_Agent::generateLocalCost(Intersection *neighbour, MovementPhases movementPhase) {
         double cost = 0;
         trafficLight.setPhase(movementPhases_to_trafficLightPhase[movementPhase]);
+        // lock
+        std::unique_lock<std::mutex> lk(*enginePredictMutex);
         engine->predictPeriod(30);
         for (auto &roadLink: roadLinks) {
             if (roadLink.getStartRoad()->getStartIntersection() == neighbour
@@ -112,7 +120,16 @@ namespace ALGO {
             }
         }
         engine->stopPredict();
+        // unlock
+        lk.unlock();
         costGraph[movementPhase][4].cost.emplace_back(nullptr, cost);
+    }
+
+    int DSA_Agent::getNotNullAgentSize(std::vector<DSA_Agent *> &agents) {
+        int size = 0;
+        for (auto &a: agents)
+            size += a != nullptr;
+        return size;
     }
 
     void DSA_Agent::generateCostGraph() {
@@ -122,13 +139,15 @@ namespace ALGO {
     }
 
     void DSA_Agent::receiveMessage(DSA_Agent::MovementPhases movementPhase, double val, DSA_Agent *sender) {
+//        std::cout << getId() << " receive message block" << '\n';
         {
-            std::unique_lock<std::mutex> lock(*agentMutex);
+            std::lock_guard<std::mutex> lock(*agentMutex);
             receivedMessage[movementPhase].Q += val;
             receivedMessage[movementPhase].sender.push_back(sender);
             ++currentReceivedNum;
         }
         cv->notify_one();
+//        std::cout << getId() << " receive message block release" << '\n';
     }
 
     void DSA_Agent::makeDecision() {
@@ -147,32 +166,46 @@ namespace ALGO {
         }
         if (bestPhase != -1) {
             trafficLight.setPhase(movementPhases_to_trafficLightPhase[bestPhase]);
-            cout << id << " make decision: " << bestPhase << '\n';
+            if(bestPhase != 0)
+                cout << id << " make decision: " << bestPhase << '\n';
         } else {
             std::cerr << "error happen, agent Id: " << id << '\n';
         }
     }
 
+    void DSA_Agent::resetAgent() {
+        currentReceivedNum = 0;
+        costGraph.clear();
+        costGraph.resize(4, std::vector<Cost>(5, Cost()));
+        receivedMessage.clear();
+        receivedMessage.resize(4, Message());
+        std::swap(inAgents, outAgents);
+    }
+
     void DSA_Agent::run() {
         // wait receive all message
         std::unique_lock<std::mutex> lk(*agentMutex);
-        cv->wait(lk, [&] { return currentReceivedNum >= 4 * inAgents.size(); });
+//        std::cout << getId() << " cv wait" << '\n';
+        cv->wait(lk, [&] { return currentReceivedNum >= 8 * getNotNullAgentSize(inAgents); });
+//        std::cout << getId() << " cv wait done" << '\n';
         generateCostGraph();
+//        std::cout << getId() << " do sth 1" << '\n';
         sendMessage();
+//        std::cout << getId() << " do sth 1 done" << '\n';
         // reverse order
-        std::swap(inAgents,outAgents);
+//        std::cout << getId() << " reverse order" << '\n';
         currentReceivedNum = 0;
-        cv->wait(lk, [&] { return currentReceivedNum >= 4 * inAgents.size(); });
+        std::swap(inAgents, outAgents);
+//        std::cout << getId() << " cv wait" << '\n';
+        cv->wait(lk, [&] { return currentReceivedNum >= 8 * getNotNullAgentSize(inAgents); });
+//        std::cout << getId() << " cv wait done" << '\n';
+        costGraph.clear();
         costGraph.resize(4, std::vector<Cost>(5, Cost()));
         generateCostGraph();
+//        std::cout << getId() << " do sth 2" << '\n';
         sendMessage();
+//        std::cout << getId() << " do sth 2 done" << '\n';
 
         makeDecision();
-        // reset
-        currentReceivedNum = 0;
-        costGraph.resize(4, std::vector<Cost>(5, Cost()));
-        receivedMessage.resize(4, Message());
-        std::swap(inAgents,outAgents);
     }
-
 } // ALGO

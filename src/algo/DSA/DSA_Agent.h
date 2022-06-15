@@ -21,7 +21,7 @@ namespace ALGO {
     private:
         struct Message {
             double Q = 0;
-            std::vector<DSA_Agent*> sender;
+            std::vector<DSA_Agent *> sender;
         };
 
         struct Cost {
@@ -34,6 +34,7 @@ namespace ALGO {
         int agentId;
         Engine *engine;
 
+        std::mutex *enginePredictMutex;
         std::mutex *agentMutex;
         std::condition_variable *cv;
         int currentReceivedNum = 0;
@@ -56,18 +57,22 @@ namespace ALGO {
 
         void generateLocalCost(Intersection *neighbour, MovementPhases movementPhase);
 
+        static int getNotNullAgentSize(std::vector<DSA_Agent *> &agents);
+
     public:
-        DSA_Agent(int id, Intersection *intersection, Engine *engine) : Intersection(*intersection), agentId(id),
-                                                                        engine(engine) {
+        DSA_Agent(int id, Intersection *intersection, Engine *engine, std::mutex *enginePredictMutex)
+                : Intersection(*intersection), agentId(id), engine(engine), enginePredictMutex(enginePredictMutex) {
             inAgents.resize(4, nullptr);
             outAgents.resize(4, nullptr);
             receivedMessage.resize(4, Message());
             costGraph.resize(4, std::vector<Cost>(5, Cost()));
+            std::cout << getId() << " : new mutex" << '\n';
             agentMutex = new std::mutex();
             cv = new std::condition_variable();
         }
 
         ~DSA_Agent() {
+            std::cout << getId() << " : delete mutex" << '\n';
             delete agentMutex;
             delete cv;
         }
@@ -76,7 +81,7 @@ namespace ALGO {
 
         void sendMessage();
 
-        void receiveMessage(MovementPhases movementPhase, double val, DSA_Agent* sender);
+        void receiveMessage(MovementPhases movementPhase, double val, DSA_Agent *sender);
 
         void updateInAgents(DSA_Agent *agent);
 
@@ -85,6 +90,8 @@ namespace ALGO {
         void generateCostGraph();
 
         void makeDecision();
+
+        void resetAgent();
 
         void run();
     };

@@ -817,7 +817,6 @@ namespace SEUTraffic {
 
         for (int i = 0; i < period; ++i)
             nextStep();
-        std::cout << "predict done\n";
     }
 
     void Engine::stopPredict() {

@@ -26,7 +26,8 @@ namespace ALGO {
         std::vector<std::thread> agentPool; // 线程池
         Barrier *startBarrier;
         Barrier *endBarrier;
-
+        bool finished = false;
+        std::mutex enginePredictMutex;
 
 
     private:
@@ -132,9 +133,15 @@ namespace ALGO {
         }
 
         void agentRun(DSA_Agent &agent) {
-            startBarrier->wait();
-            agent.run();
-            endBarrier->wait();
+            while (true) {
+                startBarrier->wait();
+//                cout << "run" << '\n';
+                if (finished) break;
+                agent.run();
+//                cout << "run stop" << '\n';
+                endBarrier->wait();
+                agent.resetAgent();
+            }
         }
 
     public:
@@ -142,9 +149,13 @@ namespace ALGO {
             this->engine = e;
             // init agents
             int id = 0;
+            // 这步好像很重要，vector频繁的调整大小的话，会对mutex造成破坏，这是为什么捏捏捏
+            // bug
+            agents.reserve(e->getRoadnet().getIntersections().size());
+
             for (auto &intersection: e->getRoadnet().getIntersections()) {
                 if (!intersection.isVirtualIntersection()) {
-                    agents.emplace_back(id++, &intersection, engine);
+                    agents.emplace_back(id++, &intersection, engine, &enginePredictMutex);
                 }
             }
             startBarrier = new Barrier(agents.size() + 1);
@@ -156,12 +167,14 @@ namespace ALGO {
                 agentPool.emplace_back(&AgentCenter::agentRun, this, std::ref(agent));
         }
 
-        void run(){
+        void run() {
             startBarrier->wait();
             endBarrier->wait();
         }
 
         ~AgentCenter() {
+            finished = true;
+            startBarrier->wait();
             for (auto &thread: agentPool) thread.join();
             delete startBarrier;
             delete endBarrier;

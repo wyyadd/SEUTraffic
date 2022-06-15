@@ -7,9 +7,9 @@
 using namespace SEUTraffic;
 
 int main() {
-    std::string configFile = "cityflow_config/trafficJam/config.json";
-//    std::string configFile = "cityflow_config/syn_4x4/config.json";
-    size_t totalStep = 2000;
+//    std::string configFile = "cityflow_config/trafficJam/config.json";
+    std::string configFile = "cityflow_config/syn_4x4/config.json";
+    size_t totalStep = 1000;
     Engine engine(configFile, 8);
     time_t startTime, endTime;
     time(&startTime);
