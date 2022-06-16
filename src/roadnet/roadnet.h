@@ -51,11 +51,11 @@ namespace SEUTraffic {
         std::vector<Road *> inRoads;
         std::vector<Road *> outRoads;
 
+    public:
+        Intersection* neighbours[4];
         enum Direction {
             East = 0, North = 1, West = 2, South = 3
         };
-    public:
-        Intersection* neighbours[4];
 
     public:
         std::string getId() const { return this->id; }
@@ -87,12 +87,8 @@ namespace SEUTraffic {
 
         const Point &getPosition() const { return point; }//yzh:获取Intersection中心点的坐标
 
-        std::unordered_map<int, int> getRoadLinkTraffic();
-
-        std::unordered_map<std::string, int> getInRoadsTraffic();
-
-        std::unordered_map<std::string, int> getOutRoadsTraffic();
-
+        std::vector<Road*>& getInRoads() {return inRoads;}
+        std::vector<Road*>& getOutRoads() {return outRoads;}
     };
 
     class Road {
@@ -129,6 +125,8 @@ namespace SEUTraffic {
 
         // wyy modify: log
         double averageLength() const;
+
+        unsigned long getVehicleCnt();
     };
 
     enum RoadLinkType {

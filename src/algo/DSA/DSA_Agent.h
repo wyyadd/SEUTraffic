@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 #include <cmath>
+#include <float.h>
 
 namespace ALGO {
     using SEUTraffic::Intersection;
@@ -18,23 +19,31 @@ namespace ALGO {
     using std::cout;
     using SEUTraffic::TrafficLight;
 
+    typedef double cType;
+
     class DSA_Agent {
     private:
         struct Message {
-            double Q = 0;
-            std::vector<DSA_Agent *> sender;
-        };
-
-        struct Cost {
-            std::vector<std::pair<DSA_Agent *, double>> cost;
+            cType Q = 0;
         };
 
         enum MovementPhases {
             WE_Straight = 0, WE_Left = 1, SN_Straight = 2, SN_Left = 3
         };
 
+        struct Traffic {
+            std::vector<cType> phase_traffic;
+            Traffic() {
+                phase_traffic.clear();
+                phase_traffic.resize(4, 0);
+            }
+        };
+
         enum Direction {
-            East = 0, North = 1, West = 2, South = 3
+            East = Intersection::East,
+            North = Intersection::North,
+            West = Intersection::West,
+            South = Intersection::South
         };
 
         int agentId;
@@ -45,24 +54,23 @@ namespace ALGO {
         std::mutex *agentMutex;
         std::condition_variable *cv;
         int currentReceivedNum = 0;
+        int enginePredictTime = 10;
+        int iterateTime = 20;
 
         std::vector<Message> receivedMessage;
         std::vector<DSA_Agent *> inAgents;
         std::vector<DSA_Agent *> outAgents;
-        // 4 rows represent 4 movementPhases, 5 column: neighbour's four movementPhase, local cost
-        // 4行代表我们的四个movementPhases, 5列:前四列表示neighbour采取的4个movementPhase下产生的cost, 第5列表示localCost
-        std::vector<std::vector<Cost>> costGraph;
+
+        // 4行4列，4行分别表示当前agent的4个movementPhase, 4列表示东南西北四个邻居， 里面的元素为邻居的4个Phase产生的traffic
+        std::vector<std::vector<Traffic>> costGraph;
+        std::vector<cType> localCost;
         int movementPhases_to_trafficLightPhase[4]{1, 3, 2, 4};
 
     private:
-        void generateCostGraph(MovementPhases movementPhase);
 
-        // direction = neighbour's direction
-        void generateCost(Direction direction, MovementPhases movementPhase);
+        std::vector<cType> generateCostWithNeighbour(Intersection *neighbour, MovementPhases movementPhase);
 
-        void generateCostWithNeighbour(DSA_Agent *neighbour, MovementPhases movementPhase);
-
-        void generateLocalCost(Intersection *neighbour, MovementPhases movementPhase);
+        cType generateLocalCost(Intersection *neighbour, MovementPhases movementPhase);
 
         static int getNotNullAgentSize(std::vector<DSA_Agent *> &agents);
 
@@ -72,9 +80,10 @@ namespace ALGO {
             inAgents.resize(4, nullptr);
             outAgents.resize(4, nullptr);
             receivedMessage.resize(4, Message());
-            costGraph.resize(4, std::vector<Cost>(5, Cost()));
             agentMutex = new std::mutex();
             cv = new std::condition_variable();
+            costGraph.resize(4, std::vector<Traffic>(4, Traffic()));
+            localCost.resize(4, 0);
         }
 
         ~DSA_Agent() {
@@ -86,17 +95,15 @@ namespace ALGO {
 
         int getAgentId() const { return agentId; }
 
-        Intersection *getIntersection() { return intersection; }
+        void sendMessage(bool reverse);
 
-        void sendMessage();
-
-        void receiveMessage(MovementPhases movementPhase, double val, DSA_Agent *sender);
+        void receiveMessage(MovementPhases movementPhase, cType val);
 
         void updateInAgents(DSA_Agent *agent);
 
         void updateOutAgents(DSA_Agent *agent);
 
-        void generateCostGraph();
+        void generateTrafficGraph();
 
         void makeDecision();
 

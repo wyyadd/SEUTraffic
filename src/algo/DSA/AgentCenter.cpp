@@ -29,7 +29,6 @@ namespace ALGO {
         bool finished = false;
         std::mutex enginePredictMutex;
 
-
     private:
         void generateGraph() {
             for (auto &a: agents) {
@@ -117,7 +116,7 @@ namespace ALGO {
                     sink_dist = dist;
                 }
             }
-            cout << sink_agent->getId() << std::endl;
+            cout << "sink Agent: " << sink_agent->getId() << std::endl;
             // secondly, determine edged two agents order By their distance to sink agent
             // if distance(sink_agent, a) < distance(sink_agent,b) then direction is b --> a, 反之亦然
             for (auto &road: engine->getRoadnet().getRoads()) {
@@ -135,10 +134,8 @@ namespace ALGO {
         void agentRun(DSA_Agent &agent) {
             while (true) {
                 startBarrier->wait();
-//                cout << "run" << '\n';
                 if (finished) break;
                 agent.run();
-//                cout << "run stop" << '\n';
                 endBarrier->wait();
                 agent.resetAgent();
             }
@@ -150,9 +147,7 @@ namespace ALGO {
             // init agents
             int id = 0;
             // 这步好像很重要，vector频繁的调整大小的话，会对mutex指针造成破坏，这是为什么捏捏捏
-            // bug
             agents.reserve(e->getRoadnet().getIntersections().size());
-
             for (auto &intersection: e->getRoadnet().getIntersections()) {
                 if (!intersection.isVirtualIntersection()) {
                     agents.emplace_back(id++, &intersection, engine, &enginePredictMutex);
@@ -181,3 +176,4 @@ namespace ALGO {
         }
     };
 } // ALGO
+

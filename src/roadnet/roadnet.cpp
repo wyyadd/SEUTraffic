@@ -92,6 +92,8 @@ namespace SEUTraffic {
                 roads[i].startIntersection = interMap[getJsonMember<const char *>("startIntersection", curRoadValue)];
                 roads[i].endIntersection = interMap[getJsonMember<const char *>("endIntersection", curRoadValue)];
 
+                // add intersection neighbours
+                // East = 0, North = 1, West = 2, South = 3
                 roads[i].startIntersection->neighbours[roads[i].getId().back() - '0'] = roads[i].endIntersection;
                 roads[i].endIntersection->neighbours[(roads[i].getId().back() - '0' + 2) % 4] = roads[i].startIntersection;
                 //check
@@ -165,6 +167,7 @@ namespace SEUTraffic {
                         throw JsonFormatError("No such road: " + roadName);
                     }
                     intersections[i].roads.push_back(roadMap[roadName]);
+                    // add intersection inroads and outRoads
                     if (roadMap[roadName]->startIntersection == &intersections[i])
                         intersections[i].outRoads.push_back(roadMap[roadName]);
                     else
@@ -690,37 +693,6 @@ namespace SEUTraffic {
               startRoad->getId() + " next rlink " + endRoad->getId();
     }
 
-    std::unordered_map<int, int> Intersection::getRoadLinkTraffic() {
-        std::unordered_map<int, int> traffic;
-        for (auto &roadLink: roadLinks) {
-            traffic[roadLink.getIndex()] = 0;
-            traffic[roadLink.getIndex()] += (int)roadLink.getVehicleCnt();
-        }
-        return traffic;
-    }
-
-    std::unordered_map<std::string, int> Intersection::getInRoadsTraffic() {
-        std::unordered_map<std::string, int> traffic;
-        for (auto inRoad: inRoads) {
-            traffic[inRoad->getId()] = 0;
-            for (auto &lane: inRoad->getLanes()) {
-                traffic[inRoad->getId()] += (int) lane.getVehicleCnt() + (int) lane.getWaitingBufferCnt();
-            }
-        }
-        return traffic;
-    }
-
-    std::unordered_map<std::string, int> Intersection::getOutRoadsTraffic() {
-        std::unordered_map<std::string, int> traffic;
-        for (auto inRoad: outRoads) {
-            traffic[inRoad->getId()] = 0;
-            for (auto &lane: inRoad->getLanes()) {
-                traffic[inRoad->getId()] += (int) lane.getVehicleCnt();
-            }
-        }
-        return traffic;
-    }
-
     double Road::getWidth() const {
         double width = 0;
         for (const auto &lane: getLanes()) {
@@ -744,6 +716,14 @@ namespace SEUTraffic {
             lanePointers.push_back(&lane);
         }
         return lanePointers;
+    }
+
+    unsigned long Road::getVehicleCnt() {
+        unsigned long cnt = 0;
+        for(auto& lane : lanes){
+            cnt += lane.getVehicleCnt() + lane.getWaitingBufferCnt();
+        }
+        return cnt;
     }
 
     void RoadNet::snapShot() {

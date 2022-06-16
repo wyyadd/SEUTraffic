@@ -25,7 +25,7 @@ namespace SEUTraffic {
 
     Drivable *Vehicle::getNextDrivable() {
         int i = currentDrivableIndex + 1;
-        if (i < (int)this->planned.size()) {
+        if (i < (int) this->planned.size()) {
             return planned[i];
         } else return nullptr;
     }
@@ -62,7 +62,7 @@ namespace SEUTraffic {
         }
 
         if (buffer.isDisSet) {
-            if(buffer.dis <= controllerInfo.dis)
+            if (buffer.dis <= controllerInfo.dis)
                 controllerInfo.backedDist += controllerInfo.dis - buffer.dis;
             else
                 controllerInfo.backedDist = 0;
@@ -162,8 +162,9 @@ namespace SEUTraffic {
             return false;
         auto point1 = this->getPoint();
         auto point2 = v->getPoint();
-        auto dist = calcDist(point1,point2);
-        return dist < (this->getLen()/2 + v->getLen()/2) * 0.75;
+        auto dist = calcDist(point1, point2);
+        // 宽松了不少， 写得比较糙
+        return dist < (this->getWidth() / 2 + v->getWidth() / 2) * 0.5 ;
     }
 
     void Vehicle::duplicate(Vehicle &v) {
@@ -194,6 +195,4 @@ namespace SEUTraffic {
         buffer.end = end;
         buffer.isEndSet = true;
     }
-
-
 }
