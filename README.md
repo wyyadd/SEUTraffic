@@ -1,3 +1,5 @@
+
+
 # 基于多智能体协调的车路协同关键技术研究
 ## 搭载有多智能体算法的一个城市规模交通信号控制仿真平台
 ### 设计思路:
@@ -8,7 +10,7 @@
 3. 构建算法模型：对现有的多Agent算法进行总结优化，提出更优的调度算法并搭载在了我们的系统中。  
 ### 当前工作
 1. 前端视觉效果优化
-2. 后端加入深度强化学习模型算法
+2. 后端加入深度强化学习模型算法（通过 `rlTrafficLight` 配置开关启用）
 ### 效果展示
 ![效果展示](https://github.com/wyyadd/SEUTraffic/blob/main/img/demo1.gif)
 ![数据展示](https://github.com/wyyadd/SEUTraffic/blob/main/img/demo1.png)
